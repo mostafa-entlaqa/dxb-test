@@ -3,9 +3,36 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, Users, DollarSign } from 'lucide-react'
 import { useLanguage } from '@/components/language-provider'
+import { useState, useEffect } from 'react'
+import { getSupabase } from '@/utils/supabase-client'
 
 export default function InsightsSection() {
   const { t, language } = useLanguage()
+  const [insights, setInsights] = useState({
+    growthRate: 0,
+    startups: 0,
+    investment: 0
+  })
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      const supabase = getSupabase()
+      const { data, error } = await supabase
+        .from('insights')
+        .select('*')
+        .single()
+
+      if (data) {
+        setInsights({
+          growthRate: data.growth_rate,
+          startups: data.startups_count,
+          investment: data.total_investment
+        })
+      }
+    }
+
+    fetchInsights()
+  }, [])
 
   return (
     <section className="py-16 bg-gray-100 dark:bg-gray-800">
@@ -21,8 +48,10 @@ export default function InsightsSection() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold text-gray-800 dark:text-white">7.4%</p>
-              <p className={`text-gray-600 dark:text-gray-300 ${language === 'ar' ? 'font-arabic' : ''}`}>{t("Annual GDP growth rate")}</p>
+              <p className="text-4xl font-bold text-gray-800 dark:text-white">{insights.growthRate}%</p>
+              <p className={`text-gray-600 dark:text-gray-300 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {t("Annual GDP growth rate")}
+              </p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-700">
@@ -32,7 +61,7 @@ export default function InsightsSection() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold text-gray-800 dark:text-white">350+</p>
+              <p className="text-4xl font-bold text-gray-800 dark:text-white">{insights.startups}</p>
               <p className={`text-gray-600 dark:text-gray-300 ${language === 'ar' ? 'font-arabic' : ''}`}>{t("New startups per year")}</p>
             </CardContent>
           </Card>
@@ -43,7 +72,7 @@ export default function InsightsSection() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold text-gray-800 dark:text-white">$1.5B</p>
+              <p className="text-4xl font-bold text-gray-800 dark:text-white">${insights.investment}B</p>
               <p className={`text-gray-600 dark:text-gray-300 ${language === 'ar' ? 'font-arabic' : ''}`}>{t("Annual foreign investment")}</p>
             </CardContent>
           </Card>

@@ -1,19 +1,149 @@
+'use client'
+
 import { Suspense } from 'react'
 import BusinessList from '@/components/business-list'
 import BusinessFilters from '@/components/business-filters'
+import { useLanguage } from '@/components/language-provider'
+import { Building2, ArrowDownWideNarrow, LayoutGrid, TrendingUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { getSupabase } from '@/utils/supabase-client'
+
+interface BusinessData {
+  id: number;
+  selling_price: number;
+  category: string;
+}
+
+interface InsightsData {
+  active_listings: number;
+  price_range_min: number;
+  price_range_max: number;
+  industries_count: number;
+}
 
 export default function BuyBusinessPage() {
+  const { t, language } = useLanguage()
+  const [insights, setInsights] = useState<InsightsData | null>(null)
+
+  useEffect(() => {
+    const fetchBusinessInsights = async () => {
+      const supabase = getSupabase()
+      const { data: businesses, error } = await supabase
+        .from('businesses')
+        .select('id, selling_price, category')
+
+      if (error) {
+        console.error('Error fetching businesses:', error)
+        return
+      }
+
+      if (businesses) {
+        // Calculate insights from actual data
+        const uniqueIndustries = new Set(businesses.map(b => b.category))
+        const prices = businesses.map(b => b.selling_price).filter(p => p > 0)
+        
+        setInsights({
+          active_listings: businesses.length,
+          price_range_min: Math.min(...prices),
+          price_range_max: Math.max(...prices),
+          industries_count: uniqueIndustries.size
+        })
+      }
+    }
+
+    fetchBusinessInsights()
+  }, [])
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) {
+      return `${(amount / 1000000).toFixed(1)}M`
+    }
+    if (amount >= 1000) {
+      return `${(amount / 1000).toFixed(1)}K`
+    }
+    return amount.toString()
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Buy a Business</h1>
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-1/3">
-          <BusinessFilters />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header Section */}
+        <div className="mb-12 text-center">
+          <h1 className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {t("Buy a Business")}
+          </h1>
+          <p className={`text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {t("Browse through our curated selection of businesses for sale in the UAE")}
+          </p>
         </div>
-        <div className="w-full md:w-2/3">
-          <Suspense fallback={<div>Loading...</div>}>
-            <BusinessList />
-          </Suspense>
+
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-xl">
+                <Building2 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className={`text-2xl font-semibold ml-4 rtl:mr-4 rtl:ml-0 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {t("Active Listings")}
+              </h3>
+            </div>
+            <p className="text-4xl font-bold text-gray-900 dark:text-white">
+              {insights?.active_listings || 0}+
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-xl">
+                <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className={`text-2xl font-semibold ml-4 rtl:mr-4 rtl:ml-0 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {t("Price Range")}
+              </h3>
+            </div>
+            <p className="text-4xl font-bold text-gray-900 dark:text-white">
+              {insights ? `${formatCurrency(insights.price_range_min)} - ${formatCurrency(insights.price_range_max)}` : ''}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-xl">
+                <LayoutGrid className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className={`text-2xl font-semibold ml-4 rtl:mr-4 rtl:ml-0 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {t("Industries")}
+              </h3>
+            </div>
+            <p className="text-4xl font-bold text-gray-900 dark:text-white">
+              {insights?.industries_count || 0}+
+            </p>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <div className="w-full lg:w-1/4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 sticky top-24">
+              <h2 className={`text-2xl font-semibold mb-8 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                {t("Filters")}
+              </h2>
+              <BusinessFilters />
+            </div>
+          </div>
+
+          {/* Business Listings */}
+          <div className="w-full lg:w-3/4">
+            <Suspense fallback={
+              <div className="w-full h-64 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            }>
+              <BusinessList />
+            </Suspense>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,3 @@
-const { fontFamily } = require('tailwindcss/defaultTheme')
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
@@ -8,7 +6,7 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-	],
+  ],
   theme: {
     container: {
       center: true,
@@ -18,10 +16,6 @@ module.exports = {
       },
     },
     extend: {
-      fontFamily: {
-        sans: ['var(--font-oswald)', ...fontFamily.sans],
-        arabic: ['var(--font-ibm-plex-sans-arabic)', ...fontFamily.sans],
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -35,10 +29,6 @@ module.exports = {
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
-        },
-        tertiary: {
-          DEFAULT: "hsl(var(--tertiary))",
-          foreground: "hsl(var(--tertiary-foreground))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
