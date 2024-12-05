@@ -175,7 +175,36 @@ const translations = {
     "0 - 100,000 AED": "0 - 100,000 AED",
     "100,000 - 500,000 AED": "100,000 - 500,000 AED",
     "500,000 - 1,000,000 AED": "500,000 - 1,000,000 AED",
-    "1,000,000+ AED": "1,000,000+ AED"
+    "1,000,000+ AED": "1,000,000+ AED",
+
+    "Filters": "Filters",
+    "Business Price (AED)": "Business Price (AED)",
+    "Min Price": "Min Price",
+    "Max Price": "Max Price",
+    "Profit Margin (%)": "Profit Margin (%)",
+    "Min Margin": "Min Margin",
+    "Max Margin": "Max Margin",
+    "Monthly Revenue": "Monthly Revenue",
+    "Asking Price": "Asking Price",
+    "View Details": "View Details",
+    "AED": "AED",
+    "Est.": "Est.",
+    "Featured": "Featured",
+    "Select Industry": "Select Industry",
+    "Price Range": "Price Range",
+    "Profit Margin": "Profit Margin",
+    "Search Businesses": "Search Businesses",
+    "Under AED 500K": "Under AED 500K",
+    "AED 500K - 1M": "AED 500K - 1M",
+    "AED 1M - 2M": "AED 1M - 2M",
+    "AED 2M - 5M": "AED 2M - 5M",
+    "AED 5M - 10M": "AED 5M - 10M",
+    "Above AED 10M": "Above AED 10M",
+    "0-10%": "0-10%",
+    "10-20%": "10-20%",
+    "20-30%": "20-30%",
+    "30-40%": "30-40%",
+    "Above 40%": "Above 40%"
   },
   ar: {
     // Navigation
@@ -236,7 +265,7 @@ const translations = {
     // CTA Banner
     "Ready to Start Your Business Journey?": "هل أنت مستعد لبدء رحلتك التجارية؟",
     "Whether you're looking to buy or sell, we're here to help you succeed.": "سواء كنت تبحث عن الشراء أو البيع، نحن هنا لمساعدتك على النجاح",
-    "List Your Business": "ارض شرتك",
+    "List Your Business": "ارض شر��",
 
     // Footer
     "Quick Links": "روابط سريعة",
@@ -268,7 +297,7 @@ const translations = {
     "Buy": "شراء",
 
     // Industry Categories
-    "Retail": "تجارة التزئة",
+    "Retail": "تجارة التزة",
     "Food & Beverage": "الأغذية والمشروبات",
     "Technology": "التكنولوجيا",
     "Manufacturing": "التصنيع",
@@ -298,7 +327,7 @@ const translations = {
     "Acquisition Type": "نوع الاستحواذ",
     "Select type": "اختر النوع",
     "Annual Revenue": "الإيرادات السنوية",
-    "Select revenue range": "اختر نطاق الإيرادات",
+    "Select revenue range": "ا��تر نطاق الإيرادات",
     "Profit Margin": "هامش الربح",
     "Enter profit margin %": "أدخل نسبة هامش الربح",
     "Area": "المنطقة",
@@ -333,7 +362,7 @@ const translations = {
     "Cafe": "مقهى",
     "Restaurant": "مطعم",
     "Retail Store": "متجر",
-    "E-commerce": "تجارة إلكترونية",
+    "E-commerce": "تجات إلكترونية",
     "Manufacturing": "تصنيع",
     "Services": "خدمات",
 
@@ -341,7 +370,36 @@ const translations = {
     "0 - 100,000 AED": "0 - 100,000 درهم",
     "100,000 - 500,000 AED": "100,000 - 500,000 درهم",
     "500,000 - 1,000,000 AED": "500,000 - 1,000,000 درهم",
-    "1,000,000+ AED": "1,000,000+ درهم"
+    "1,000,000+ AED": "1,000,000+ درهم",
+
+    "Filters": "التصفية",
+    "Business Price (AED)": "سعر الشركة (درهم)",
+    "Min Price": "الحد الأدنى للسعر",
+    "Max Price": "الحد الأقصى للسعر",
+    "Profit Margin (%)": "هامش الربح (%)",
+    "Min Margin": "الحد الأدنى للهامش",
+    "Max Margin": "الحد الأقصى للهامش",
+    "Monthly Revenue": "الإيرادات الشهرية",
+    "Asking Price": "السعر المطلوب",
+    "View Details": "عرض التفاصيل",
+    "AED": "درهم",
+    "Est.": "تأسست",
+    "Featured": "مميز",
+    "Select Industry": "اختر القطاع",
+    "Price Range": "نطاق السعر",
+    "Profit Margin": "هامش الربح",
+    "Search Businesses": "البحث عن الشركات",
+    "Under AED 500K": "أقل من 500 ألف درهم",
+    "AED 500K - 1M": "500 ألف - 1 مليون درهم",
+    "AED 1M - 2M": "1 - 2 مليون درهم",
+    "AED 2M - 5M": "2 - 5 مليون درهم",
+    "AED 5M - 10M": "5 - 10 مليون درهم",
+    "Above AED 10M": "أكثر من 10 مليون درهم",
+    "0-10%": "0-10%",
+    "10-20%": "10-20%",
+    "20-30%": "20-30%",
+    "30-40%": "30-40%",
+    "Above 40%": "Above 40%"
   }
 }
 

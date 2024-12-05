@@ -21,16 +21,34 @@ interface InsightsData {
   industries_count: number;
 }
 
+interface FilterParams {
+  categoryId?: string
+  areaId?: string
+  minPrice?: string
+  maxPrice?: string
+  minProfitMargin?: string
+  maxProfitMargin?: string
+}
+
 export default function BuyBusinessPage() {
   const { t, language } = useLanguage()
   const [insights, setInsights] = useState<InsightsData | null>(null)
+  const [activeFilters, setActiveFilters] = useState<FilterParams>({})
 
   useEffect(() => {
     const fetchBusinessInsights = async () => {
       const supabase = getSupabase()
       const { data: businesses, error } = await supabase
         .from('businesses')
-        .select('id, selling_price, category')
+        .select(`
+          id,
+          selling_price,
+          category_id,
+          business_categories (
+            name,
+            name_ar
+          )
+        `)
 
       if (error) {
         console.error('Error fetching businesses:', error)
@@ -39,14 +57,14 @@ export default function BuyBusinessPage() {
 
       if (businesses) {
         // Calculate insights from actual data
-        const uniqueIndustries = new Set(businesses.map(b => b.category))
+        const uniqueCategories = new Set(businesses.map(b => b.category_id))
         const prices = businesses.map(b => b.selling_price).filter(p => p > 0)
         
         setInsights({
           active_listings: businesses.length,
-          price_range_min: Math.min(...prices),
-          price_range_max: Math.max(...prices),
-          industries_count: uniqueIndustries.size
+          price_range_min: Math.min(...prices) || 0,
+          price_range_max: Math.max(...prices) || 0,
+          industries_count: uniqueCategories.size
         })
       }
     }
@@ -62,6 +80,14 @@ export default function BuyBusinessPage() {
       return `${(amount / 1000).toFixed(1)}K`
     }
     return amount.toString()
+  }
+
+  const handleFilterChange = (filters: FilterParams) => {
+    setActiveFilters(filters)
+  }
+
+  const handleFilterReset = () => {
+    setActiveFilters({})
   }
 
   return (
@@ -89,7 +115,7 @@ export default function BuyBusinessPage() {
               </h3>
             </div>
             <p className="text-4xl font-bold text-gray-900 dark:text-white">
-              {insights?.active_listings || 0}+
+              {insights?.active_listings > 0 ? `${insights.active_listings}+` : '0'}
             </p>
           </div>
 
@@ -103,7 +129,9 @@ export default function BuyBusinessPage() {
               </h3>
             </div>
             <p className="text-4xl font-bold text-gray-900 dark:text-white">
-              {insights ? `${formatCurrency(insights.price_range_min)} - ${formatCurrency(insights.price_range_max)}` : ''}
+              {insights && (insights.price_range_min > 0 || insights.price_range_max > 0) 
+                ? `${formatCurrency(insights.price_range_min)} - ${formatCurrency(insights.price_range_max)}`
+                : t("No data")}
             </p>
           </div>
 
@@ -117,7 +145,7 @@ export default function BuyBusinessPage() {
               </h3>
             </div>
             <p className="text-4xl font-bold text-gray-900 dark:text-white">
-              {insights?.industries_count || 0}+
+              {insights?.industries_count > 0 ? `${insights.industries_count}+` : '0'}
             </p>
           </div>
         </div>
@@ -130,7 +158,11 @@ export default function BuyBusinessPage() {
               <h2 className={`text-2xl font-semibold mb-8 ${language === 'ar' ? 'font-arabic' : ''}`}>
                 {t("Filters")}
               </h2>
-              <BusinessFilters />
+              <BusinessFilters 
+                onFilter={handleFilterChange}
+                onReset={handleFilterReset}
+                initialFilters={activeFilters}
+              />
             </div>
           </div>
 
@@ -141,7 +173,7 @@ export default function BuyBusinessPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             }>
-              <BusinessList />
+              <BusinessList filters={activeFilters} />
             </Suspense>
           </div>
         </div>

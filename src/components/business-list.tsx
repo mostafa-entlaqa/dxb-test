@@ -6,7 +6,7 @@ import { getSupabase } from '@/utils/supabase-client'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Percent, Building2, MapPin, ArrowRight, Calendar } from 'lucide-react'
+import { DollarSign, Percent, Building2, MapPin, ArrowRight, Calendar, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
 
@@ -14,7 +14,7 @@ interface Business {
   id: number
   opportunity_name: string
   description: string
-  category: string
+  category_id: number
   monthly_revenue: number
   profit_margin: number
   selling_price: number
@@ -23,9 +23,30 @@ interface Business {
   images: string[]
   location: string
   established_year: number
+  business_categories: {
+    name: string
+    name_ar: string
+  }
+  areas: {
+    name: string
+    name_ar: string
+  }
 }
 
-export default function BusinessList() {
+interface FilterParams {
+  categoryId?: string
+  areaId?: string
+  minPrice?: string
+  maxPrice?: string
+  minProfitMargin?: string
+  maxProfitMargin?: string
+}
+
+interface BusinessListProps {
+  filters?: FilterParams
+}
+
+export default function BusinessList({ filters }: BusinessListProps) {
   const { t, language } = useLanguage()
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,16 +56,19 @@ export default function BusinessList() {
   const itemsPerPage = 10
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-AE', {
+    const formatter = new Intl.NumberFormat(language === 'ar' ? 'ar-AE' : 'en-AE', {
       style: 'currency',
       currency: 'AED',
       maximumFractionDigits: 0,
+      currencyDisplay: 'code'
     }).format(amount)
+    
+    return formatter.replace('AED', t('AED'))
   }
 
   useEffect(() => {
     fetchBusinesses()
-  }, [page])
+  }, [page, filters])
 
   async function fetchBusinesses() {
     try {
@@ -52,11 +76,44 @@ export default function BusinessList() {
       setError(null)
       const supabase = getSupabase()
 
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('businesses')
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          business_categories (
+            name,
+            name_ar
+          ),
+          areas (
+            name,
+            name_ar
+          )
+        `, { count: 'exact' })
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false })
+
+      if (filters) {
+        if (filters.categoryId) {
+          query = query.eq('category_id', filters.categoryId)
+        }
+        if (filters.areaId) {
+          query = query.eq('area_id', filters.areaId)
+        }
+        if (filters.minPrice) {
+          query = query.gte('selling_price', parseFloat(filters.minPrice))
+        }
+        if (filters.maxPrice) {
+          query = query.lte('selling_price', parseFloat(filters.maxPrice))
+        }
+        if (filters.minProfitMargin) {
+          query = query.gte('profit_margin', parseFloat(filters.minProfitMargin))
+        }
+        if (filters.maxProfitMargin) {
+          query = query.lte('profit_margin', parseFloat(filters.maxProfitMargin))
+        }
+      }
+
+      const { data, error, count } = await query
         .range((page - 1) * itemsPerPage, page * itemsPerPage - 1)
 
       if (error) throw error
@@ -97,6 +154,30 @@ export default function BusinessList() {
     )
   }
 
+  if (businesses.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+        <LayoutGrid className="w-12 h-12 text-gray-400 mb-4" />
+        <h3 className={`text-xl font-semibold mb-2 ${language === 'ar' ? 'font-arabic' : ''}`}>
+          {t("No Results Found")}
+        </h3>
+        <p className={`text-gray-600 dark:text-gray-400 ${language === 'ar' ? 'font-arabic' : ''}`}>
+          {t("Can't find a business that match your criteria")}
+        </p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline" 
+          className={cn(
+            'mt-4 h-auto py-2',
+            language === 'ar' ? 'font-arabic' : ''
+          )}
+        >
+          {t("Reset Filters")}
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -125,7 +206,9 @@ export default function BusinessList() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Badge variant="outline" className="text-sm">
-                  {t(business.category)}
+                  {language === 'ar' 
+                    ? business.business_categories?.name_ar 
+                    : business.business_categories?.name}
                 </Badge>
                 <Badge variant="outline" className="text-sm">
                   {t(business.acquisition_type)}
@@ -142,7 +225,9 @@ export default function BusinessList() {
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {business.location}
+                    {language === 'ar' 
+                      ? business.areas?.name_ar 
+                      : business.areas?.name}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -177,18 +262,38 @@ export default function BusinessList() {
               </div>
             </CardContent>
             <CardFooter className="p-6 pt-0">
-              <div className="w-full flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              <div className={cn(
+                "w-full flex items-center",
+                language === 'ar' ? 'flex-row-reverse justify-between' : 'justify-between'
+              )}>
+                <div className={cn(
+                  "flex flex-col",
+                  language === 'ar' ? 'items-end' : 'items-start'
+                )}>
+                  <div className={cn(
+                    "text-sm text-gray-500 dark:text-gray-400 mb-1",
+                    language === 'ar' ? 'text-right' : 'text-left'
+                  )}>
                     {t("Asking Price")}
                   </div>
-                  <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className={cn(
+                    "text-xl font-bold text-blue-600 dark:text-blue-400",
+                    language === 'ar' ? 'text-right' : 'text-left'
+                  )}>
                     {formatCurrency(business.selling_price)}
                   </div>
                 </div>
-                <Button className="ml-auto">
+                <Button 
+                  className={cn(
+                    'h-10 px-4',
+                    language === 'ar' ? 'flex flex-row-reverse items-center gap-2 font-arabic' : 'flex items-center gap-2'
+                  )}
+                >
                   {t("View Details")}
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  <ArrowRight className={cn(
+                    "w-4 h-4",
+                    language === 'ar' ? 'rotate-180' : ''
+                  )} />
                 </Button>
               </div>
             </CardFooter>
@@ -205,7 +310,7 @@ export default function BusinessList() {
           disabled={page === 1}
           variant="outline"
           className={cn(
-            'gap-2',
+            'gap-2 h-auto py-2 px-4',
             language === 'ar' ? 'font-arabic flex-row-reverse' : ''
           )}
         >
@@ -216,7 +321,7 @@ export default function BusinessList() {
           disabled={page * itemsPerPage >= totalCount}
           variant="outline"
           className={cn(
-            'gap-2',
+            'gap-2 h-auto py-2 px-4',
             language === 'ar' ? 'font-arabic flex-row-reverse' : ''
           )}
         >

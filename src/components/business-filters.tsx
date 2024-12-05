@@ -5,19 +5,93 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/components/language-provider'
+import { getSupabase } from '@/utils/supabase-client'
 import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
 
-export default function BusinessFilters() {
+interface Category {
+  id: number
+  name: string
+  name_ar: string
+  slug: string
+}
+
+interface Area {
+  id: number
+  name: string
+  name_ar: string
+  slug: string
+}
+
+interface FilterParams {
+  categoryId?: string
+  areaId?: string
+  minPrice?: string
+  maxPrice?: string
+  minProfitMargin?: string
+  maxProfitMargin?: string
+}
+
+interface BusinessFiltersProps {
+  onFilter: (filters: FilterParams) => void
+  onReset: () => void
+  initialFilters?: FilterParams
+}
+
+export default function BusinessFilters({ onFilter, onReset, initialFilters = {} }: BusinessFiltersProps) {
   const { t, language } = useLanguage()
+  const [categories, setCategories] = useState<Category[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
+  const [filters, setFilters] = useState<FilterParams>(initialFilters)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = getSupabase()
+
+      // Fetch categories
+      const { data: categoriesData } = await supabase
+        .from('business_categories')
+        .select('*')
+        .order('name')
+
+      if (categoriesData) {
+        setCategories(categoriesData)
+      }
+
+      // Fetch areas
+      const { data: areasData } = await supabase
+        .from('areas')
+        .select('*')
+        .order('name')
+
+      if (areasData) {
+        setAreas(areasData)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  const handleFilter = (e: React.FormEvent) => {
+    e.preventDefault()
+    onFilter(filters)
+  }
+
+  const handleReset = () => {
+    setFilters({})
+    onReset()
+  }
 
   return (
-    <form className="space-y-6">
+    <form onSubmit={handleFilter} className="space-y-6">
       <div className="space-y-4">
         <div>
           <Label className={language === 'ar' ? 'font-arabic' : ''}>
             {t("Business Category")}
           </Label>
-          <Select>
+          <Select
+            onValueChange={(value) => setFilters(prev => ({ ...prev, categoryId: value }))}
+          >
             <SelectTrigger className={cn(
               'mt-2',
               language === 'ar' ? 'font-arabic text-right' : ''
@@ -25,85 +99,106 @@ export default function BusinessFilters() {
               <SelectValue placeholder={t("Select category")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="cafe">{t("Cafe")}</SelectItem>
-              <SelectItem value="restaurant">{t("Restaurant")}</SelectItem>
-              <SelectItem value="retail">{t("Retail")}</SelectItem>
-              {/* Add more categories as needed */}
+              {categories.map((category) => (
+                <SelectItem 
+                  key={category.id} 
+                  value={category.id.toString()}
+                  className={language === 'ar' ? 'font-arabic text-right' : ''}
+                >
+                  {language === 'ar' ? category.name_ar : category.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
           <Label className={language === 'ar' ? 'font-arabic' : ''}>
-            {t("Business Price")}
+            {t("Business Price (AED)")}
           </Label>
-          <Input 
-            type="text" 
-            placeholder={t("Enter price")} 
-            className={cn(
-              'mt-2',
-              language === 'ar' ? 'font-arabic text-right' : ''
-            )}
-          />
-        </div>
-
-        <div>
-          <Label className={language === 'ar' ? 'font-arabic' : ''}>
-            {t("Acquisition Type")}
-          </Label>
-          <Select>
-            <SelectTrigger className={cn(
-              'mt-2',
-              language === 'ar' ? 'font-arabic text-right' : ''
+          <div className="grid grid-cols-2 gap-2">
+            <div className={cn(
+              "relative",
+              language === 'ar' ? 'text-right' : 'text-left'
             )}>
-              <SelectValue placeholder={t("Select type")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="buy">{t("Buy")}</SelectItem>
-              <SelectItem value="invest">{t("Invest")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label className={language === 'ar' ? 'font-arabic' : ''}>
-            {t("Annual Revenue")}
-          </Label>
-          <Select>
-            <SelectTrigger className={cn(
-              'mt-2',
-              language === 'ar' ? 'font-arabic text-right' : ''
+              <Input
+                type="number"
+                placeholder={t("Min Price")}
+                value={filters.minPrice}
+                onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                className={cn(
+                  'mt-2 placeholder:text-gray-400',
+                  language === 'ar' ? 'font-arabic text-right pr-4' : ''
+                )}
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+              />
+            </div>
+            <div className={cn(
+              "relative",
+              language === 'ar' ? 'text-right' : 'text-left'
             )}>
-              <SelectValue placeholder={t("Select revenue range")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0-100000">{t("0 - 100,000 AED")}</SelectItem>
-              <SelectItem value="100000-500000">{t("100,000 - 500,000 AED")}</SelectItem>
-              <SelectItem value="500000-1000000">{t("500,000 - 1,000,000 AED")}</SelectItem>
-              <SelectItem value="1000000+">{t("1,000,000+ AED")}</SelectItem>
-            </SelectContent>
-          </Select>
+              <Input
+                type="number"
+                placeholder={t("Max Price")}
+                value={filters.maxPrice}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                className={cn(
+                  'mt-2 placeholder:text-gray-400',
+                  language === 'ar' ? 'font-arabic text-right pr-4' : ''
+                )}
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+              />
+            </div>
+          </div>
         </div>
 
         <div>
           <Label className={language === 'ar' ? 'font-arabic' : ''}>
-            {t("Profit Margin")}
+            {t("Profit Margin (%)")}
           </Label>
-          <Input 
-            type="text" 
-            placeholder={t("Enter profit margin %")} 
-            className={cn(
-              'mt-2',
-              language === 'ar' ? 'font-arabic text-right' : ''
-            )}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <div className={cn(
+              "relative",
+              language === 'ar' ? 'text-right' : 'text-left'
+            )}>
+              <Input
+                type="number"
+                placeholder={t("Min Margin")}
+                value={filters.minProfitMargin}
+                onChange={(e) => setFilters(prev => ({ ...prev, minProfitMargin: e.target.value }))}
+                className={cn(
+                  'mt-2 placeholder:text-gray-400',
+                  language === 'ar' ? 'font-arabic text-right pr-4' : ''
+                )}
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+              />
+            </div>
+            <div className={cn(
+              "relative",
+              language === 'ar' ? 'text-right' : 'text-left'
+            )}>
+              <Input
+                type="number"
+                placeholder={t("Max Margin")}
+                value={filters.maxProfitMargin}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxProfitMargin: e.target.value }))}
+                className={cn(
+                  'mt-2 placeholder:text-gray-400',
+                  language === 'ar' ? 'font-arabic text-right pr-4' : ''
+                )}
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+              />
+            </div>
+          </div>
         </div>
 
         <div>
           <Label className={language === 'ar' ? 'font-arabic' : ''}>
             {t("Area")}
           </Label>
-          <Select>
+          <Select
+            onValueChange={(value) => setFilters(prev => ({ ...prev, areaId: value }))}
+          >
             <SelectTrigger className={cn(
               'mt-2',
               language === 'ar' ? 'font-arabic text-right' : ''
@@ -111,10 +206,15 @@ export default function BusinessFilters() {
               <SelectValue placeholder={t("Select area")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="dubai">{t("Dubai")}</SelectItem>
-              <SelectItem value="abu-dhabi">{t("Abu Dhabi")}</SelectItem>
-              <SelectItem value="ras-al-khaimah">{t("Ras Al Khaimah")}</SelectItem>
-              {/* Add more areas as needed */}
+              {areas.map((area) => (
+                <SelectItem 
+                  key={area.id} 
+                  value={area.id.toString()}
+                  className={language === 'ar' ? 'font-arabic text-right' : ''}
+                >
+                  {language === 'ar' ? area.name_ar : area.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -123,17 +223,18 @@ export default function BusinessFilters() {
           <Button 
             type="submit" 
             className={cn(
-              'flex-1',
+              'flex-1 h-auto py-2',
               language === 'ar' ? 'font-arabic' : ''
             )}
           >
             {t("Filter")}
           </Button>
           <Button 
-            type="reset" 
+            type="button"
             variant="outline"
+            onClick={handleReset}
             className={cn(
-              'flex-1',
+              'flex-1 h-auto py-2',
               language === 'ar' ? 'font-arabic' : ''
             )}
           >
