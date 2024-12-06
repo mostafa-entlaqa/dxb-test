@@ -51,11 +51,22 @@ export default function Header() {
               <Globe className="h-[1.2rem] w-[1.2rem]" />
               <span className="sr-only">Toggle language</span>
             </Button>
-            <Button variant="ghost" className={`rounded-full text-base ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {t("Sign In")}
+            <Button 
+              variant="ghost" 
+              className={`rounded-full text-base ${language === 'ar' ? 'font-arabic' : ''}`}
+              asChild
+            >
+              <Link href="/login">
+                {t("Sign In")}
+              </Link>
             </Button>
-            <Button className={`rounded-full text-base bg-blue-600 hover:bg-blue-700 ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {t("Sign Up")}
+            <Button 
+              className={`rounded-full text-base bg-blue-600 hover:bg-blue-700 ${language === 'ar' ? 'font-arabic' : ''}`}
+              asChild
+            >
+              <Link href="/signup">
+                {t("Sign Up")}
+              </Link>
             </Button>
           </div>
         </div>
