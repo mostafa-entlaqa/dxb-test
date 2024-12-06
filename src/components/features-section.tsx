@@ -8,6 +8,85 @@ import { cn } from '@/lib/utils'
 export default function FeaturesSection() {
   const { t, language } = useLanguage()
 
+  const buyerFeatures = [
+    {
+      icon: <FileText className={cn("h-6 w-6", language === 'ar' ? 'ml-3' : 'mr-3')} />,
+      title: t("Business Information"),
+      description: t("Comprehensive details on each listed business"),
+      size: "large"
+    },
+    {
+      icon: <CheckCircle className={cn("h-5 w-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Validation"),
+      description: t("Verified listings for your peace of mind"),
+      size: "small"
+    },
+    {
+      icon: <BarChart className={cn("h-5 w-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Numbers is Everything"),
+      description: t("Detailed financial data and performance metrics"),
+      size: "small"
+    },
+    {
+      icon: <Brain className={cn("h-5 w-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Powered by AI"),
+      description: t("AI-driven insights and recommendations"),
+      size: "small"
+    }
+  ]
+
+  const sellerFeatures = [
+    {
+      icon: <Users className={cn("h-6 w-6", language === 'ar' ? 'ml-3' : 'mr-3')} />,
+      title: t("Reach More People"),
+      description: t("Connect with a wide network of potential buyers"),
+      size: "large"
+    },
+    {
+      icon: <Clock className={cn("h-5 w-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Sell in a Week"),
+      description: t("Streamlined process for quick sales"),
+      size: "small"
+    },
+    {
+      icon: <Lock className={cn("h-5 w-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Privacy"),
+      description: t("Confidential listings to protect your business"),
+      size: "small"
+    },
+    {
+      icon: <Sparkles className={cn("h-5 w-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("AI Assistance"),
+      description: t("AI-assisted valuation and listing optimization"),
+      size: "small"
+    }
+  ]
+
+  const renderFeatureCard = (feature: any, color: string) => (
+    <Card className={`border-l-4 ${color} hover:shadow-lg transition-shadow duration-300`}>
+      <CardHeader>
+        <CardTitle className={cn(
+          "flex items-center",
+          feature.size === "large" ? "text-xl md:text-2xl" : "text-lg",
+          "font-semibold",
+          color.replace('border', 'text'),
+          language === 'ar' ? 'font-arabic flex-row-reverse' : ''
+        )}>
+          {feature.icon} {feature.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className={cn(
+          feature.size === "large" ? "text-lg" : "text-base",
+          "text-gray-600 dark:text-gray-300",
+          language === 'ar' ? 'font-arabic text-right' : ''
+        )}>
+          {feature.description}
+        </p>
+      </CardContent>
+    </Card>
+  )
+
   return (
     <section className="py-16 bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4">
@@ -21,195 +100,33 @@ export default function FeaturesSection() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* For Buyers */}
           <div>
             <h3 className={cn(
               "text-2xl md:text-3xl font-semibold mb-8",
               "text-blue-600 dark:text-blue-400",
-              language === 'ar' ? 'font-arabic' : ''
+              language === 'ar' ? 'font-arabic text-right' : ''
             )}>
               {t("For Buyers")}
             </h3>
             <div className="grid gap-6">
-              <Card className="border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-xl md:text-2xl font-semibold",
-                    "text-blue-600 dark:text-blue-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <FileText className="mr-3 rtl:ml-3 rtl:mr-0 h-6 w-6" />
-                    {t("Business Information")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-lg text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("Comprehensive details on each listed business")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-lg font-semibold",
-                    "text-blue-600 dark:text-blue-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <CheckCircle className="mr-2 rtl:ml-2 rtl:mr-0 h-5 w-5" />
-                    {t("Validation")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-base text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("Verified listings for your peace of mind")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-lg font-semibold",
-                    "text-blue-600 dark:text-blue-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <BarChart className="mr-2 rtl:ml-2 rtl:mr-0 h-5 w-5" />
-                    {t("Numbers is Everything")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-base text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("Detailed financial data and performance metrics")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-blue-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-lg font-semibold",
-                    "text-blue-600 dark:text-blue-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <Brain className="mr-2 rtl:ml-2 rtl:mr-0 h-5 w-5" />
-                    {t("Powered by AI")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-base text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("AI-driven insights and recommendations")}
-                  </p>
-                </CardContent>
-              </Card>
+              {buyerFeatures.map((feature, index) => (
+                renderFeatureCard(feature, 'border-blue-500')
+              ))}
             </div>
           </div>
 
-          {/* For Sellers */}
           <div>
             <h3 className={cn(
               "text-2xl md:text-3xl font-semibold mb-8",
               "text-orange-500 dark:text-orange-400",
-              language === 'ar' ? 'font-arabic' : ''
+              language === 'ar' ? 'font-arabic text-right' : ''
             )}>
               {t("For Sellers")}
             </h3>
             <div className="grid gap-6">
-              <Card className="border-l-4 border-orange-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-xl md:text-2xl font-semibold",
-                    "text-orange-500 dark:text-orange-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <Users className="mr-3 rtl:ml-3 rtl:mr-0 h-6 w-6" />
-                    {t("Reach More People")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-lg text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("Connect with a wide network of potential buyers")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-orange-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-lg font-semibold",
-                    "text-orange-500 dark:text-orange-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <Clock className="mr-2 rtl:ml-2 rtl:mr-0 h-5 w-5" />
-                    {t("Sell in a Week")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-base text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("Streamlined process for quick sales")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-orange-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-lg font-semibold",
-                    "text-orange-500 dark:text-orange-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <Lock className="mr-2 rtl:ml-2 rtl:mr-0 h-5 w-5" />
-                    {t("Privacy")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-base text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("Confidential listings to protect your business")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-orange-500 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className={cn(
-                    "flex items-center text-lg font-semibold",
-                    "text-orange-500 dark:text-orange-400",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    <Sparkles className="mr-2 rtl:ml-2 rtl:mr-0 h-5 w-5" />
-                    {t("AI Assistance")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={cn(
-                    "text-base text-gray-600 dark:text-gray-300",
-                    language === 'ar' ? 'font-arabic' : ''
-                  )}>
-                    {t("AI-assisted valuation and listing optimization")}
-                  </p>
-                </CardContent>
-              </Card>
+              {sellerFeatures.map((feature, index) => (
+                renderFeatureCard(feature, 'border-orange-500')
+              ))}
             </div>
           </div>
         </div>

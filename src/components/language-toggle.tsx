@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 export function LanguageToggle() {
   const { language, setLanguage } = useLanguage()
@@ -24,13 +25,20 @@ export function LanguageToggle() {
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
           onClick={() => setLanguage('en')}
-          className={language === 'en' ? 'bg-gray-100 dark:bg-gray-800' : ''}
+          className={cn(
+            "cursor-pointer",
+            language === 'en' ? 'bg-gray-100 dark:bg-gray-800' : '',
+            language === 'ar' ? 'text-right' : ''
+          )}
         >
           English
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => setLanguage('ar')}
-          className={language === 'ar' ? 'bg-gray-100 dark:bg-gray-800' : ''}
+          className={cn(
+            "cursor-pointer",
+            language === 'ar' ? 'bg-gray-100 dark:bg-gray-800 text-right' : ''
+          )}
         >
           العربية
         </DropdownMenuItem>

@@ -56,7 +56,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-transparent backdrop-blur-sm">
       <div className="container mx-auto flex h-20 items-center justify-between px-4">
-        <div className="flex items-center space-x-8">
+        <div className={cn(
+          "flex items-center",
+          language === 'ar' ? 'space-x-8 space-x-reverse' : 'space-x-8'
+        )}>
           <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
@@ -69,41 +72,36 @@ export default function Header() {
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex space-x-6">
-            <Link 
-              href="/" 
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
-            >
-              {t("Home")}
-            </Link>
-            <Link 
-              href="/about" 
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
-            >
-              {t("About Us")}
-            </Link>
-            <Link 
-              href="/buy" 
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
-            >
-              {t("Buy Business")}
-            </Link>
-            <Link 
-              href="/sell" 
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
-            >
-              {t("Sell Business")}
-            </Link>
-            <Link 
-              href="/contact" 
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
-            >
-              {t("Contact")}
-            </Link>
+          <nav className={cn(
+            "hidden md:flex",
+            language === 'ar' ? 'space-x-6 space-x-reverse' : 'space-x-6'
+          )}>
+            {[
+              { href: '/', label: t("Home") },
+              { href: '/about', label: t("About Us") },
+              { href: '/buy', label: t("Buy Business") },
+              { href: '/sell', label: t("Sell Business") },
+              { href: '/contact', label: t("Contact") },
+            ].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium",
+                  "transition-colors duration-200",
+                  language === 'ar' ? 'font-arabic text-right' : ''
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className={cn(
+          "flex items-center",
+          language === 'ar' ? 'space-x-4 space-x-reverse' : 'space-x-4'
+        )}>
           <ThemeToggle />
           <LanguageToggle />
           
@@ -112,12 +110,23 @@ export default function Header() {
               {user ? (
                 <UserMenu user={user} />
               ) : (
-                <div className="flex items-center space-x-4">
+                <div className={cn(
+                  "flex items-center",
+                  language === 'ar' ? 'space-x-4 space-x-reverse' : 'space-x-4'
+                )}>
                   <Button variant="ghost" asChild>
-                    <Link href="/login">{t("Sign In")}</Link>
+                    <Link href="/login" className={cn(
+                      language === 'ar' ? 'font-arabic' : ''
+                    )}>
+                      {t("Sign In")}
+                    </Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/signup">{t("Sign Up")}</Link>
+                    <Link href="/signup" className={cn(
+                      language === 'ar' ? 'font-arabic' : ''
+                    )}>
+                      {t("Sign Up")}
+                    </Link>
                   </Button>
                 </div>
               )}

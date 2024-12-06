@@ -10,10 +10,34 @@ export default function InsightsSection() {
 
   // Real UAE market data for 2023-2024
   const insights = {
-    growthRate: 5.7, // UAE GDP growth rate for 2024 (IMF forecast)
-    startups: 4000, // Approximate new business licenses in Dubai for 2023
-    investment: 22.1 // FDI inflow in billions USD for 2023
+    growthRate: 5.7,
+    startups: 4000,
+    investment: 22.1
   }
+
+  const insightCards = [
+    {
+      icon: <TrendingUp className={cn("w-5 h-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Growth Rate"),
+      value: `${insights.growthRate}%`,
+      description: t("Annual GDP growth rate"),
+      color: "text-blue-600 dark:text-blue-400"
+    },
+    {
+      icon: <Users className={cn("w-5 h-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Startups"),
+      value: `${insights.startups}+`,
+      description: t("New startups per year"),
+      color: "text-orange-500 dark:text-orange-400"
+    },
+    {
+      icon: <DollarSign className={cn("w-5 h-5", language === 'ar' ? 'ml-2' : 'mr-2')} />,
+      title: t("Investment"),
+      value: `$${insights.investment}B`,
+      description: t("Annual foreign investment"),
+      color: "text-green-600 dark:text-green-400"
+    }
+  ]
 
   return (
     <section className="py-16 bg-white dark:bg-gray-900">
@@ -27,68 +51,38 @@ export default function InsightsSection() {
           {t("UAE Business Insights")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle className={cn(
-                "flex items-center text-xl font-semibold",
-                "text-blue-600 dark:text-blue-400",
-                language === 'ar' ? 'font-arabic' : ''
+          {insightCards.map((card, index) => (
+            <Card 
+              key={index} 
+              className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300"
+            >
+              <CardHeader>
+                <CardTitle className={cn(
+                  "flex items-center text-xl font-semibold",
+                  card.color,
+                  language === 'ar' ? 'font-arabic flex-row-reverse' : ''
+                )}>
+                  {card.icon} {card.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className={cn(
+                language === 'ar' ? 'text-right' : ''
               )}>
-                <TrendingUp className="mr-2 rtl:ml-2 rtl:mr-0" /> {t("Growth Rate")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{insights.growthRate}%</p>
-              <p className={cn(
-                "text-base text-gray-600 dark:text-gray-300",
-                language === 'ar' ? 'font-arabic' : ''
-              )}>
-                {t("Annual GDP growth rate")}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle className={cn(
-                "flex items-center text-xl font-semibold",
-                "text-orange-500 dark:text-orange-400",
-                language === 'ar' ? 'font-arabic' : ''
-              )}>
-                <Users className="mr-2 rtl:ml-2 rtl:mr-0" /> {t("Startups")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{insights.startups}+</p>
-              <p className={cn(
-                "text-base text-gray-600 dark:text-gray-300",
-                language === 'ar' ? 'font-arabic' : ''
-              )}>
-                {t("New startups per year")}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle className={cn(
-                "flex items-center text-xl font-semibold",
-                "text-green-600 dark:text-green-400",
-                language === 'ar' ? 'font-arabic' : ''
-              )}>
-                <DollarSign className="mr-2 rtl:ml-2 rtl:mr-0" /> {t("Investment")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">${insights.investment}B</p>
-              <p className={cn(
-                "text-base text-gray-600 dark:text-gray-300",
-                language === 'ar' ? 'font-arabic' : ''
-              )}>
-                {t("Annual foreign investment")}
-              </p>
-            </CardContent>
-          </Card>
+                <p className={cn(
+                  "text-4xl font-bold text-gray-900 dark:text-white mb-2",
+                  language === 'ar' ? 'font-arabic' : ''
+                )}>
+                  {language === 'ar' ? card.value.replace('$', '') + ' دولار' : card.value}
+                </p>
+                <p className={cn(
+                  "text-base text-gray-600 dark:text-gray-300",
+                  language === 'ar' ? 'font-arabic' : ''
+                )}>
+                  {card.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </section>

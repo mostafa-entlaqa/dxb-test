@@ -13,6 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { User, LogOut, LayoutDashboard, UserCircle, KeyRound } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import { useLanguage } from '@/components/language-provider'
+import { cn } from '@/lib/utils'
 
 interface UserMenuProps {
   user: {
@@ -28,6 +30,7 @@ export function UserMenu({ user }: UserMenuProps) {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient()
+  const { language, t } = useLanguage()
 
   const handleLogout = async () => {
     try {
@@ -74,32 +77,44 @@ export function UserMenu({ user }: UserMenuProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={() => router.push('/dashboard')}
-          className="cursor-pointer"
+          className={cn(
+            "cursor-pointer flex items-center",
+            language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''
+          )}
         >
-          <LayoutDashboard className="mr-2 h-4 w-4" />
-          Dashboard
+          <LayoutDashboard className={cn("h-4 w-4", language === 'ar' ? 'ml-2' : 'mr-2')} />
+          {t("Dashboard")}
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={() => router.push('/settings/profile')}
-          className="cursor-pointer"
+          onClick={() => router.push('/profile')}
+          className={cn(
+            "cursor-pointer flex items-center",
+            language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''
+          )}
         >
-          <UserCircle className="mr-2 h-4 w-4" />
-          Profile
+          <UserCircle className={cn("h-4 w-4", language === 'ar' ? 'ml-2' : 'mr-2')} />
+          {t("Profile")}
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => router.push('/settings/password')}
-          className="cursor-pointer"
+          className={cn(
+            "cursor-pointer flex items-center",
+            language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''
+          )}
         >
-          <KeyRound className="mr-2 h-4 w-4" />
-          Change Password
+          <KeyRound className={cn("h-4 w-4", language === 'ar' ? 'ml-2' : 'mr-2')} />
+          {t("Change Password")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={handleLogout}
-          className="cursor-pointer text-red-600 focus:text-red-600"
+          className={cn(
+            "cursor-pointer text-red-600 focus:text-red-600 flex items-center",
+            language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''
+          )}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          <LogOut className={cn("h-4 w-4", language === 'ar' ? 'ml-2' : 'mr-2')} />
+          {t("Logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
