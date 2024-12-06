@@ -35,8 +35,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-grow content-background pt-16">{children}</main>
+              <div className="bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+                <Header />
+                <main className="flex-grow">{children}</main>
+              </div>
               <Footer />
             </div>
             <Toaster />

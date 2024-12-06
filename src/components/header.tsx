@@ -1,74 +1,128 @@
 'use client'
 
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
-import { useTheme } from 'next-themes'
-import { useLanguage } from '@/components/language-provider'
-import { Globe } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { LanguageToggle } from '@/components/language-toggle'
+import { UserMenu } from '@/components/user-menu'
+import { useLanguage } from '@/components/language-provider'
+import { cn } from '@/lib/utils'
 
 export default function Header() {
-  const { setTheme } = useTheme()
-  const { language, setLanguage, t } = useLanguage()
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { t, language } = useLanguage()
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          setUser(profile)
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        getUser()
+      } else {
+        setUser(null)
+        setIsLoading(false)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase])
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex h-24 items-center justify-between">
-          <Link href="/" className="relative w-[280px] h-16">
-            <img
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-transparent backdrop-blur-sm">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4">
+        <div className="flex items-center space-x-8">
+          <Link href="/" className="flex items-center">
+            <Image
               src="/logo.png"
               alt="SellBusiness.ae"
-              className="h-full w-auto object-contain"
+              width={200}
+              height={50}
+              className="h-14 w-auto"
+              priority
             />
           </Link>
-          <nav className="hidden md:flex items-center space-x-6 rtl:space-x-reverse">
-            <Link href="/" className={`text-base text-foreground/80 hover:text-foreground transition-colors ${language === 'ar' ? 'font-arabic' : ''}`}>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex space-x-6">
+            <Link 
+              href="/" 
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
+            >
               {t("Home")}
             </Link>
-            <Link href="/about" className={`text-base text-foreground/80 hover:text-foreground transition-colors ${language === 'ar' ? 'font-arabic' : ''}`}>
+            <Link 
+              href="/about" 
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
+            >
               {t("About Us")}
             </Link>
-            <Link href="/buy" className={`text-base text-foreground/80 hover:text-foreground transition-colors ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {t("Buy a Business")}
+            <Link 
+              href="/buy" 
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
+            >
+              {t("Buy Business")}
             </Link>
-            <Link href="/sell" className={`text-base text-foreground/80 hover:text-foreground transition-colors ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {t("Sell a Business")}
+            <Link 
+              href="/sell" 
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
+            >
+              {t("Sell Business")}
             </Link>
-            <Link href="/contact" className={`text-base text-foreground/80 hover:text-foreground transition-colors ${language === 'ar' ? 'font-arabic' : ''}`}>
-              {t("Contact Us")}
+            <Link 
+              href="/contact" 
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium"
+            >
+              {t("Contact")}
             </Link>
           </nav>
-          <div className="flex items-center space-x-4 rtl:space-x-reverse">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="rounded-full"
-            >
-              <Globe className="h-[1.2rem] w-[1.2rem]" />
-              <span className="sr-only">Toggle language</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              className={`rounded-full text-base ${language === 'ar' ? 'font-arabic' : ''}`}
-              asChild
-            >
-              <Link href="/login">
-                {t("Sign In")}
-              </Link>
-            </Button>
-            <Button 
-              className={`rounded-full text-base bg-blue-600 hover:bg-blue-700 ${language === 'ar' ? 'font-arabic' : ''}`}
-              asChild
-            >
-              <Link href="/signup">
-                {t("Sign Up")}
-              </Link>
-            </Button>
-          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          <LanguageToggle />
+          
+          {!isLoading && (
+            <>
+              {user ? (
+                <UserMenu user={user} />
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">{t("Sign In")}</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/signup">{t("Sign Up")}</Link>
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </header>

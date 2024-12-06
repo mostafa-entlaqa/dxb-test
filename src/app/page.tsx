@@ -7,8 +7,8 @@ import CTABanner from '@/components/cta-banner'
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero Section with gradient background */}
-      <div className="relative bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Hero Section */}
+      <div>
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         </div>
