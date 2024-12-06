@@ -1,10 +1,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'export',
   images: {
-    domains: ['rchwvfwjkxwivxsebmhd.supabase.co'], // Add your Supabase project URL here
+    unoptimized: true
   },
-  output: 'export', // For static export
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if

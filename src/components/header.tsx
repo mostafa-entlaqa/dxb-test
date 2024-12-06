@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useTheme } from 'next-themes'
 import { useLanguage } from '@/components/language-provider'
@@ -14,9 +15,13 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-            SellBusiness.ae
+        <div className="flex h-24 items-center justify-between">
+          <Link href="/" className="relative w-[280px] h-16">
+            <img
+              src="/logo.png"
+              alt="SellBusiness.ae"
+              className="h-full w-auto object-contain"
+            />
           </Link>
           <nav className="hidden md:flex items-center space-x-6 rtl:space-x-reverse">
             <Link href="/" className={`text-base text-foreground/80 hover:text-foreground transition-colors ${language === 'ar' ? 'font-arabic' : ''}`}>

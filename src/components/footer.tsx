@@ -14,7 +14,13 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className={`text-xl font-semibold mb-4 text-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>SellBusiness.ae</h3>
+            <div className="mb-8">
+              <img
+                src="/logo.png"
+                alt="SellBusiness.ae"
+                className="h-16 w-auto object-contain"
+              />
+            </div>
             <p className={`text-lg text-muted-foreground ${language === 'ar' ? 'font-arabic' : ''}`}>
               {t("The Largest Business Marketplace in UAE")}
             </p>
