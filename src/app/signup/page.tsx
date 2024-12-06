@@ -85,6 +85,35 @@ export default function SignUpPage() {
     },
   })
 
+  const calculatePasswordStrength = (password: string): number => {
+    if (!password) return 0
+    
+    let score = 0
+    const checks = {
+      length: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[^A-Za-z0-9]/.test(password),
+    }
+
+    // Base score from length
+    if (password.length >= 12) score += 2
+    else if (password.length >= 8) score += 1
+
+    // Add points for character variety
+    if (checks.hasUpperCase) score += 1
+    if (checks.hasLowerCase) score += 1
+    if (checks.hasNumber) score += 1
+    if (checks.hasSpecialChar) score += 1
+
+    // Bonus point for having all types
+    if (Object.values(checks).every(Boolean)) score += 1
+
+    // Normalize score to 0-4 range
+    return Math.min(Math.floor((score / 7) * 4), 4)
+  }
+
   const handleSubmit = async (data: AccountFormData) => {
     setIsLoading(true)
     try {
@@ -92,7 +121,7 @@ export default function SignUpPage() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             full_name: '',
             role: 'user',

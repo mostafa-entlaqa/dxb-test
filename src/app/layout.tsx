@@ -2,6 +2,7 @@ import '@/app/globals.css'
 import { Oswald, IBM_Plex_Sans_Arabic } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { LanguageProvider } from '@/components/language-provider'
+import { Toaster } from '@/components/ui/toaster'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 
@@ -38,6 +39,7 @@ export default function RootLayout({
               <main className="flex-grow content-background pt-16">{children}</main>
               <Footer />
             </div>
+            <Toaster />
           </LanguageProvider>
         </ThemeProvider>
       </body>

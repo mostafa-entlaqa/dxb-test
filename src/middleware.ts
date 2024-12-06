@@ -10,21 +10,28 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // If user is not logged in, allow the request
-  if (!session) {
-    return res
+  // Protected routes that require authentication
+  const protectedRoutes = ['/dashboard', '/settings']
+  const isProtectedRoute = protectedRoutes.some(route => 
+    req.nextUrl.pathname.startsWith(route)
+  )
+
+  // If accessing protected route without session, redirect to login
+  if (isProtectedRoute && !session) {
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('users')
-    .select('profile_completed')
-    .eq('id', session.user.id)
-    .single()
+  // If logged in but profile not completed
+  if (session) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('profile_completed')
+      .eq('id', session.user.id)
+      .single()
 
-  // If profile is not completed and user is not on complete-profile page
-  if (!profile?.profile_completed && !req.nextUrl.pathname.startsWith('/complete-profile')) {
-    return NextResponse.redirect(new URL('/complete-profile', req.url))
+    if (!profile?.profile_completed && !req.nextUrl.pathname.startsWith('/complete-profile')) {
+      return NextResponse.redirect(new URL('/complete-profile', req.url))
+    }
   }
 
   return res
@@ -34,6 +41,6 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/settings/:path*',
-    // Add other protected routes
+    '/complete-profile',
   ],
 } 
