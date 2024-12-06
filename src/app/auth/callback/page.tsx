@@ -19,10 +19,25 @@ export default function AuthCallbackPage() {
           return
         }
 
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-        if (error) {
-          throw error
+        if (error) throw error
+
+        if (data.user) {
+          // Check if user exists in users table
+          const { data: profile } = await supabase
+            .from('users')
+            .select('profile_completed')
+            .eq('id', data.user.id)
+            .single()
+
+          // Redirect based on profile completion
+          if (profile?.profile_completed) {
+            router.replace('/dashboard')
+          } else {
+            router.replace('/complete-profile')
+          }
+          return
         }
 
         router.replace('/login?status=confirmation-success')
@@ -37,7 +52,7 @@ export default function AuthCallbackPage() {
     }
 
     handleCallback()
-  }, [router, searchParams, supabase.auth])
+  }, [router, searchParams, supabase])
 
   return (
     <div className="flex min-h-screen items-center justify-center">

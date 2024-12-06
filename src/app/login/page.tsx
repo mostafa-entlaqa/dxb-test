@@ -48,34 +48,40 @@ export default function LoginPage() {
   const handleSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // First sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
-      if (error) throw error
+      if (signInError) throw signInError
 
-      // Get user profile to check role
-      const { data: profile } = await supabase
+      // Get the user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Authentication failed')
+
+      // Check if profile exists and is completed
+      const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('role, profile_completed')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single()
+        .eq('id', user.id)
+        .maybeSingle()
 
-      if (!profile) throw new Error('Profile not found')
+      if (profileError) throw profileError
 
-      // Check if profile needs to be completed
+      if (!profile) {
+        // Profile doesn't exist, redirect to complete profile
+        router.push('/complete-profile')
+        return
+      }
+
       if (!profile.profile_completed) {
         router.push('/complete-profile')
         return
       }
 
-      // Redirect based on role
-      if (profile.role === 'admin') {
-        router.push('/admin')
-      } else {
-        router.push('/dashboard')
-      }
+      // Profile exists and is completed, redirect based on role
+      router.push(profile.role === 'admin' ? '/admin' : '/dashboard')
 
       toast({
         title: 'Welcome back!',
