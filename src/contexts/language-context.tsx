@@ -66,13 +66,27 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     initLanguage()
   }, [])
 
-  // Handle page navigation and content translation
+  // Add this new effect to handle page transitions
+  useEffect(() => {
+    if (window.Weglot && isReady) {
+      const storedLang = localStorage.getItem('selectedLanguage')
+      if (storedLang === 'ar') {
+        // Re-apply Arabic translation on page change
+        window.Weglot.switchTo('ar')
+        updateDirection('ar')
+      }
+    }
+  }, [pathname, isReady])
+
+  // Modify the translation effect to run on pathname changes
   useEffect(() => {
     if (window.Weglot && isReady) {
       const translateContent = () => {
         try {
+          // Force re-translation of the entire page
+          window.Weglot.refresh()
+
           const translatableElements = document.querySelectorAll('[data-wg-translatable]')
-          
           if (translatableElements.length === 0) return
 
           // Format elements according to Weglot's expected structure
@@ -98,32 +112,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Initial translation with delay
-      setTimeout(translateContent, 100)
+      // Run translation with a slight delay to ensure DOM is ready
+      const timeoutId = setTimeout(translateContent, 200)
 
-      // Setup mutation observer for dynamic content
-      const observer = new MutationObserver((mutations) => {
-        const hasRelevantChanges = mutations.some(mutation => 
-          mutation.type === 'childList' && 
-          mutation.addedNodes.length > 0 &&
-          Array.from(mutation.addedNodes).some(node => 
-            node instanceof Element && 
-            (node.hasAttribute('data-wg-translatable') || 
-             node.querySelector('[data-wg-translatable]'))
-          )
-        )
-        
-        if (hasRelevantChanges) {
-          setTimeout(translateContent, 100)
-        }
-      })
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      })
-
-      return () => observer.disconnect()
+      return () => clearTimeout(timeoutId)
     }
   }, [currentLanguage, isReady, pathname])
 

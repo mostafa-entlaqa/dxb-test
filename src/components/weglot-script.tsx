@@ -5,6 +5,36 @@ import { useEffect } from 'react'
 
 export function WeglotScript() {
   useEffect(() => {
+    const initializeWeglot = () => {
+      try {
+        window.Weglot.initialize({
+          api_key: 'wg_f648b9aa8dc0a5d8a2d23bb0d2f0f4762',
+          originalLanguage: 'en',
+          destinationLanguages: ['ar'],
+          cache: true,
+          hideLanguageSwitcher: true,
+          autoSwitch: false,
+          translateElements: '[data-wg-translatable]',
+          languageBehavior: {
+            ar: {
+              direction: 'rtl'
+            }
+          },
+          pageReady: () => {
+            // Apply stored language after initialization
+            const storedLang = localStorage.getItem('selectedLanguage')
+            if (storedLang === 'ar') {
+              window.Weglot.switchTo('ar')
+            }
+          }
+        })
+
+        console.log('Weglot initialized successfully')
+      } catch (error) {
+        console.error('Error initializing Weglot:', error)
+      }
+    }
+
     if (window.Weglot) {
       initializeWeglot()
     } else {
@@ -18,35 +48,6 @@ export function WeglotScript() {
       return () => clearInterval(interval)
     }
   }, [])
-
-  const initializeWeglot = () => {
-    try {
-      window.Weglot.initialize({
-        api_key: 'wg_f648b9aa8dc0a5d8a2d23bb0d2f0f4762',
-        originalLanguage: 'en',
-        destinationLanguages: ['ar'],
-        cache: true,
-        hideLanguageSwitcher: true,
-        autoSwitch: false,
-        translateElements: '[data-wg-translatable]',
-        languageBehavior: {
-          ar: {
-            direction: 'rtl'
-          }
-        }
-      })
-
-      // Set initial language from localStorage
-      const storedLang = localStorage.getItem('selectedLanguage')
-      if (storedLang === 'ar') {
-        window.Weglot.switchTo('ar')
-      }
-
-      console.log('Weglot initialized successfully')
-    } catch (error) {
-      console.error('Error initializing Weglot:', error)
-    }
-  }
 
   return (
     <Script 
