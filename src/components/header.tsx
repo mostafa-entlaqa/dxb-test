@@ -7,10 +7,23 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/user-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Globe } from 'lucide-react'
 
-export default function Header() {
+const languages = [
+  { code: 'en', label: 'English' },
+  { code: 'ar', label: 'العربية' }
+]
+
+export function Header() {
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [currentLang, setCurrentLang] = useState('en')
   const supabase = createClientComponentClient()
 
   useEffect(() => {
@@ -49,6 +62,13 @@ export default function Header() {
     }
   }, [supabase])
 
+  const handleLanguageChange = (langCode: string) => {
+    if (window.Weglot) {
+      window.Weglot.switchTo(langCode)
+      setCurrentLang(langCode)
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-transparent backdrop-blur-sm">
       <div className="container mx-auto flex h-20 items-center justify-between px-4">
@@ -84,9 +104,31 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-6">
+          {/* Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Globe className="h-[1.2rem] w-[1.2rem]" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {languages.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className={`cursor-pointer ${currentLang === lang.code ? 'font-bold' : ''}`}
+                >
+                  {lang.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Theme Toggle */}
           <ThemeToggle />
-          
+
+          {/* User Menu / Auth Buttons */}
           {!isLoading && (
             <>
               {user ? (
@@ -94,14 +136,10 @@ export default function Header() {
               ) : (
                 <div className="flex items-center space-x-4">
                   <Button variant="ghost" asChild>
-                    <Link href="/login">
-                      Sign In
-                    </Link>
+                    <Link href="/login">Sign In</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/signup">
-                      Sign Up
-                    </Link>
+                    <Link href="/signup">Sign Up</Link>
                   </Button>
                 </div>
               )}

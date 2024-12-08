@@ -1,0 +1,74 @@
+/* Only apply RTL styles when explicitly in RTL mode */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Prevent RTL styles from applying in LTR mode */
+[dir="ltr"] {
+  text-align: left;
+}
+
+/* Make flex direction changes specific to RTL */
+[dir="rtl"] .flex-row { 
+  flex-direction: row-reverse; 
+}
+
+[dir="ltr"] .flex-row {
+  flex-direction: row;
+}
+
+/* RTL spacing adjustments */
+[dir="rtl"] .space-x-4 > * + * { 
+  margin-right: 1rem; 
+  margin-left: 0; 
+}
+
+[dir="rtl"] .space-x-6 > * + * { 
+  margin-right: 1.5rem; 
+  margin-left: 0; 
+}
+
+[dir="rtl"] .space-x-8 > * + * { 
+  margin-right: 2rem; 
+  margin-left: 0; 
+}
+
+/* LTR spacing resets */
+[dir="ltr"] .space-x-4 > * + * {
+  margin-left: 1rem;
+  margin-right: 0;
+}
+
+[dir="ltr"] .space-x-6 > * + * {
+  margin-left: 1.5rem;
+  margin-right: 0;
+}
+
+[dir="ltr"] .space-x-8 > * + * {
+  margin-left: 2rem;
+  margin-right: 0;
+}
+
+/* RTL margin adjustments */
+[dir="rtl"] .ml-2 { 
+  margin-left: 0; 
+  margin-right: 0.5rem; 
+}
+
+[dir="rtl"] .mr-2 { 
+  margin-right: 0; 
+  margin-left: 0.5rem; 
+}
+
+/* LTR margin resets */
+[dir="ltr"] .ml-2 {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="ltr"] .mr-2 {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* Add any other RTL-specific styles you need */ 

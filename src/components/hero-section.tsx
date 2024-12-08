@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getTranslatedCategories, getTranslatedAreas } from '@/lib/supabase-queries'
 
 interface Category {
   id: number
@@ -43,20 +44,13 @@ export default function HeroSection() {
       try {
         setIsLoading(true)
         
-        // Fetch categories
-        const { data: categoriesData } = await supabase
-          .from('business_categories')
-          .select('id, name, slug')
-          .order('name')
+        const [categoriesData, areasData] = await Promise.all([
+          getTranslatedCategories(),
+          getTranslatedAreas()
+        ])
         
-        // Fetch areas
-        const { data: areasData } = await supabase
-          .from('areas')
-          .select('id, name, slug')
-          .order('name')
-        
-        if (categoriesData) setCategories(categoriesData)
-        if (areasData) setAreas(areasData)
+        setCategories(categoriesData)
+        setAreas(areasData)
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -65,7 +59,7 @@ export default function HeroSection() {
     }
 
     fetchData()
-  }, [supabase])
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

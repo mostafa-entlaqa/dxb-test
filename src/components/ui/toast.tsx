@@ -4,6 +4,8 @@ import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
+import { useLanguage } from '@/contexts/language-context'
+import { useEffect, useRef } from 'react'
 
 import { cn } from "@/lib/utils"
 
@@ -45,6 +47,15 @@ const Toast = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
+  const { translateElement } = useLanguage()
+  const toastRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (toastRef.current) {
+      translateElement(toastRef.current)
+    }
+  }, [props.open])
+
   return (
     <ToastPrimitives.Root
       ref={ref}

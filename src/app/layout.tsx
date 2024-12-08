@@ -1,9 +1,12 @@
 import '@/app/globals.css'
+import '@/styles/rtl.css'
 import { Oswald } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
-import Header from '@/components/header'
+import { Header } from '@/components/header'
 import Footer from '@/components/footer'
+import { LanguageProvider } from '@/contexts/language-context'
+import { WeglotScript } from '@/components/weglot-script'
 
 const oswald = Oswald({ 
   subsets: ['latin'],
@@ -22,24 +25,23 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html suppressHydrationWarning>
       <body className={`${oswald.variable} font-sans`}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="system" 
-          enableSystem 
-          disableTransitionOnChange
-          storageKey="theme-preference"
-        >
-          <div className="flex flex-col min-h-screen">
-            <div className="bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <WeglotScript />
+        <LanguageProvider>
+          <ThemeProvider 
+            attribute="class" 
+            defaultTheme="system" 
+            enableSystem
+          >
+            <div data-wg-translatable>
               <Header />
-              <main className="flex-grow">{children}</main>
+              {children}
+              <Footer />
             </div>
-            <Footer />
-          </div>
-          <Toaster />
-        </ThemeProvider>
+            <Toaster />
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   )
