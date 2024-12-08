@@ -11,12 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLanguage } from '@/components/language-provider'
-import { cn } from '@/lib/utils'
 
 export function ThemeToggle() {
   const { setTheme } = useTheme()
-  const { language } = useLanguage()
 
   return (
     <DropdownMenu>
@@ -30,30 +27,21 @@ export function ThemeToggle() {
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
           onClick={() => setTheme('light')}
-          className={cn(
-            "cursor-pointer",
-            language === 'ar' ? 'text-right' : ''
-          )}
+          className="cursor-pointer"
         >
-          {language === 'ar' ? 'فاتح' : 'Light'}
+          Light
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => setTheme('dark')}
-          className={cn(
-            "cursor-pointer",
-            language === 'ar' ? 'text-right' : ''
-          )}
+          className="cursor-pointer"
         >
-          {language === 'ar' ? 'داكن' : 'Dark'}
+          Dark
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => setTheme('system')}
-          className={cn(
-            "cursor-pointer",
-            language === 'ar' ? 'text-right' : ''
-          )}
+          className="cursor-pointer"
         >
-          {language === 'ar' ? 'النظام' : 'System'}
+          System
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

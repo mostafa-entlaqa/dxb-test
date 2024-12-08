@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useLanguage } from '@/components/language-provider'
 import { cn } from '@/lib/utils'
 
 const industries = [
@@ -36,7 +35,6 @@ const priceRanges = [
 ]
 
 export function BusinessSearch() {
-  const { t, language } = useLanguage()
   const [searchType, setSearchType] = React.useState('buy')
 
   return (
@@ -46,50 +44,41 @@ export function BusinessSearch() {
           <Button
             key={type}
             variant={searchType === type ? 'default' : 'ghost'}
-            className={cn(
-              'flex-1 rounded-xl capitalize',
-              language === 'ar' ? 'font-arabic' : ''
-            )}
+            className="flex-1 rounded-xl capitalize"
             onClick={() => setSearchType(type)}
           >
-            {t(type)}
+            {type}
           </Button>
         ))}
       </div>
       <div className="grid md:grid-cols-3 gap-3">
         <Select>
-          <SelectTrigger className={cn(
-            'bg-gray-50 dark:bg-gray-700 rounded-xl h-12',
-            language === 'ar' ? 'font-arabic' : ''
-          )}>
-            <SelectValue placeholder={t("Select Industry")} />
+          <SelectTrigger className="bg-gray-50 dark:bg-gray-700 rounded-xl h-12">
+            <SelectValue placeholder="Select Industry" />
           </SelectTrigger>
           <SelectContent>
             {industries.map((industry) => (
               <SelectItem key={industry} value={industry.toLowerCase()}>
-                {t(industry)}
+                {industry}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select>
-          <SelectTrigger className={cn(
-            'bg-gray-50 dark:bg-gray-700 rounded-xl h-12',
-            language === 'ar' ? 'font-arabic' : ''
-          )}>
-            <SelectValue placeholder={t("Price Range")} />
+          <SelectTrigger className="bg-gray-50 dark:bg-gray-700 rounded-xl h-12">
+            <SelectValue placeholder="Price Range" />
           </SelectTrigger>
           <SelectContent>
             {priceRanges.map((range) => (
               <SelectItem key={range} value={range.toLowerCase()}>
-                {t(range)}
+                {range}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Button className="h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
           <Search className="mr-2 h-4 w-4" />
-          {t("Search")}
+          Search
         </Button>
       </div>
     </div>

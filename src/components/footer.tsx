@@ -2,18 +2,14 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useLanguage } from '@/components/language-provider'
-import { cn } from '@/lib/utils'
 
 export default function Footer() {
-  const { t, language } = useLanguage()
-
   const footerLinks = [
-    { href: '/', label: t("Home") },
-    { href: '/about', label: t("About Us") },
-    { href: '/buy', label: t("Buy a Business") },
-    { href: '/sell', label: t("Sell a Business") },
-    { href: '/contact', label: t("Contact Us") },
+    { href: '/', label: "Home" },
+    { href: '/about', label: "About Us" },
+    { href: '/buy', label: "Buy a Business" },
+    { href: '/sell', label: "Sell a Business" },
+    { href: '/contact', label: "Contact Us" },
   ]
 
   return (
@@ -21,9 +17,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
-          <div className={cn(
-            language === 'ar' ? 'text-right' : ''
-          )}>
+          <div>
             <div className="mb-8">
               <Image
                 src="/logo.png"
@@ -33,36 +27,22 @@ export default function Footer() {
                 className="h-16 w-auto object-contain"
               />
             </div>
-            <p className={cn(
-              "text-lg text-muted-foreground",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
-              {t("The Largest Business Marketplace in UAE")}
+            <p className="text-lg text-muted-foreground">
+              The Largest Business Marketplace in UAE
             </p>
           </div>
 
           {/* Quick Links */}
-          <div className={cn(
-            language === 'ar' ? 'text-right' : ''
-          )}>
-            <h3 className={cn(
-              "text-lg font-semibold mb-4 text-foreground",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
-              {t("Quick Links")}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
+              Quick Links
             </h3>
-            <ul className={cn(
-              "space-y-2",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
+            <ul className="space-y-2">
               {footerLinks.map((link) => (
                 <li key={link.href}>
                   <Link 
                     href={link.href} 
-                    className={cn(
-                      "text-lg text-muted-foreground hover:text-foreground transition-colors",
-                      language === 'ar' ? 'font-arabic' : ''
-                    )}
+                    className="text-lg text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -72,65 +52,46 @@ export default function Footer() {
           </div>
 
           {/* Contact Info */}
-          <div className={cn(
-            language === 'ar' ? 'text-right' : ''
-          )}>
-            <h3 className={cn(
-              "text-lg font-semibold mb-4 text-foreground",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
-              {t("Contact Info")}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
+              Contact Info
             </h3>
-            <ul className={cn(
-              "space-y-2",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
+            <ul className="space-y-2">
               <li className="text-lg text-muted-foreground">
-                {t("Email")}: info@sellbusiness.ae
+                Email: info@sellbusiness.ae
               </li>
               <li className="text-lg text-muted-foreground">
-                {t("Phone")}: +971 4 123 4567
+                Phone: +971 4 123 4567
               </li>
               <li className="text-lg text-muted-foreground">
-                {t("Address")}: {t("Dubai, UAE")}
+                Address: Dubai, UAE
               </li>
             </ul>
           </div>
 
           {/* Business Hours */}
-          <div className={cn(
-            language === 'ar' ? 'text-right' : ''
-          )}>
-            <h3 className={cn(
-              "text-lg font-semibold mb-4 text-foreground",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
-              {t("Business Hours")}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
+              Business Hours
             </h3>
-            <ul className={cn(
-              "space-y-2",
-              language === 'ar' ? 'font-arabic' : ''
-            )}>
+            <ul className="space-y-2">
               <li className="text-lg text-muted-foreground">
-                {t("Monday - Friday")}: 9:00 AM - 6:00 PM
+                Monday - Friday: 9:00 AM - 6:00 PM
               </li>
               <li className="text-lg text-muted-foreground">
-                {t("Saturday")}: 10:00 AM - 2:00 PM
+                Saturday: 10:00 AM - 2:00 PM
               </li>
               <li className="text-lg text-muted-foreground">
-                {t("Sunday")}: {t("Closed")}
+                Sunday: Closed
               </li>
             </ul>
           </div>
         </div>
 
         {/* Copyright */}
-        <div className={cn(
-          "mt-8 border-t pt-8 text-center",
-          language === 'ar' ? 'font-arabic' : ''
-        )}>
+        <div className="mt-8 border-t pt-8 text-center">
           <p className="text-muted-foreground">
-            &copy; {new Date().getFullYear()} SellBusiness.ae. {t("All rights reserved.")}
+            &copy; {new Date().getFullYear()} SellBusiness.ae. All rights reserved.
           </p>
         </div>
       </div>

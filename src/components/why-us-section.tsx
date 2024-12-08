@@ -1,6 +1,5 @@
 'use client'
 
-import { useLanguage } from '@/components/language-provider'
 import { Users, Shield, MessageSquare, Scale, Banknote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
@@ -46,78 +45,58 @@ const FeatureCard = ({ icon, title, description, color, delay }: FeatureCardProp
 )
 
 export default function WhyUsSection() {
-  const { t, language } = useLanguage()
-
   const features = [
     {
-      icon: <Users className="w-6 h-6 text-white" />,
-      title: t("Largest Marketplace"),
-      description: t("Access the biggest selection of businesses in the UAE"),
-      color: "bg-blue-600 dark:bg-blue-500",
+      icon: <Users className="h-6 w-6 text-blue-600" />,
+      title: "Large Network",
+      description: "Access to thousands of verified buyers and sellers across the UAE",
+      color: "bg-blue-100 dark:bg-blue-900/50",
       delay: 1
     },
     {
-      icon: <Shield className="w-6 h-6 text-white" />,
-      title: t("Trusted Sources"),
-      description: t("All listings are verified and from reliable sources"),
-      color: "bg-orange-500 dark:bg-orange-400",
+      icon: <Shield className="h-6 w-6 text-green-600" />,
+      title: "Secure Process",
+      description: "Safe and secure transaction process with verified businesses",
+      color: "bg-green-100 dark:bg-green-900/50",
       delay: 2
     },
     {
-      icon: <MessageSquare className="w-6 h-6 text-white" />,
-      title: t("Communicate Directly"),
-      description: t("Connect with buyers or sellers without intermediaries"),
-      color: "bg-green-500 dark:bg-green-400",
+      icon: <MessageSquare className="h-6 w-6 text-purple-600" />,
+      title: "Expert Support",
+      description: "Dedicated support team to guide you through the entire process",
+      color: "bg-purple-100 dark:bg-purple-900/50",
       delay: 3
     },
     {
-      icon: <Scale className="w-6 h-6 text-white" />,
-      title: t("Legal Assistance"),
-      description: t("Get help with legal aspects of buying or selling a business"),
-      color: "bg-purple-500 dark:bg-purple-400",
+      icon: <Scale className="h-6 w-6 text-orange-600" />,
+      title: "Fair Valuation",
+      description: "Professional business valuation services for accurate pricing",
+      color: "bg-orange-100 dark:bg-orange-900/50",
       delay: 4
     },
     {
-      icon: <Banknote className="w-6 h-6 text-white" />,
-      title: t("Financial Assistance"),
-      description: t("Access financial advice and support for your transaction"),
-      color: "bg-red-500 dark:bg-red-400",
+      icon: <Banknote className="h-6 w-6 text-teal-600" />,
+      title: "Flexible Terms",
+      description: "Various payment and acquisition options to suit your needs",
+      color: "bg-teal-100 dark:bg-teal-900/50",
       delay: 5
     }
   ]
 
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-900">
+    <section className="py-16">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-16"
-        >
-          <h2 className={cn(
-            "text-4xl font-bold mb-4",
-            "text-gray-900 dark:text-white",
-            language === 'ar' ? 'font-arabic' : ''
-          )}>
-            {t("Why Choose Us")}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 text-lg">
-            {t("Discover why businesses trust us for their buying and selling needs")}
-          </p>
-        </motion.div>
+        <h2 className={cn(
+          "text-3xl md:text-4xl font-bold mb-12 text-center",
+          "bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600",
+          "bg-clip-text text-transparent"
+        )}>
+          Why Choose Us
+        </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <FeatureCard
-              key={index}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-              color={feature.color}
-              delay={feature.delay}
-            />
+            <FeatureCard key={index} {...feature} />
           ))}
         </div>
       </div>

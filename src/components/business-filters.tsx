@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useLanguage } from '@/components/language-provider'
 import { getSupabase } from '@/utils/supabase-client'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
@@ -12,14 +11,12 @@ import { useEffect, useState } from 'react'
 interface Category {
   id: number
   name: string
-  name_ar: string
   slug: string
 }
 
 interface Area {
   id: number
   name: string
-  name_ar: string
   slug: string
 }
 
@@ -38,42 +35,40 @@ interface BusinessFiltersProps {
   initialFilters?: FilterParams
 }
 
-export default function BusinessFilters({ onFilter, onReset, initialFilters = {} }: BusinessFiltersProps) {
-  const { t, language } = useLanguage()
+export default function BusinessFilters({ onFilter, onReset, initialFilters }: BusinessFiltersProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [areas, setAreas] = useState<Area[]>([])
-  const [filters, setFilters] = useState<FilterParams>(initialFilters)
+  const [filters, setFilters] = useState<FilterParams>(initialFilters || {})
 
   useEffect(() => {
     const fetchData = async () => {
       const supabase = getSupabase()
-
+      
       // Fetch categories
       const { data: categoriesData } = await supabase
         .from('business_categories')
-        .select('*')
+        .select('id, name, slug')
         .order('name')
-
-      if (categoriesData) {
-        setCategories(categoriesData)
-      }
-
+      
       // Fetch areas
       const { data: areasData } = await supabase
         .from('areas')
-        .select('*')
+        .select('id, name, slug')
         .order('name')
-
-      if (areasData) {
-        setAreas(areasData)
-      }
+      
+      if (categoriesData) setCategories(categoriesData)
+      if (areasData) setAreas(areasData)
     }
 
     fetchData()
   }, [])
 
-  const handleFilter = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleFilterChange = (key: keyof FilterParams, value: string) => {
+    const newFilters = { ...filters, [key]: value }
+    setFilters(newFilters)
+  }
+
+  const handleApplyFilters = () => {
     onFilter(filters)
   }
 
@@ -83,171 +78,92 @@ export default function BusinessFilters({ onFilter, onReset, initialFilters = {}
   }
 
   return (
-    <form onSubmit={handleFilter} className="space-y-6">
-      <div className={cn(
-        "space-y-2",
-        language === 'ar' ? 'text-right' : ''
-      )}>
-        <Label className={cn(
-          language === 'ar' ? 'font-arabic' : ''
-        )}>
-          {t("Business Category")}
-        </Label>
-        <Select
-          value={filters.categoryId}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, categoryId: value }))}
-        >
-          <SelectTrigger className={cn(
-            language === 'ar' ? 'font-arabic text-right' : ''
-          )}>
-            <SelectValue placeholder={t("Select Category")} />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem 
-                key={category.id} 
-                value={category.id.toString()}
-                className={cn(
-                  language === 'ar' ? 'font-arabic text-right' : ''
-                )}
-              >
-                {language === 'ar' ? category.name_ar : category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select
+            value={filters.categoryId}
+            onValueChange={(value) => handleFilterChange('categoryId', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className={cn(
-        "space-y-2",
-        language === 'ar' ? 'text-right' : ''
-      )}>
-        <Label className={cn(
-          language === 'ar' ? 'font-arabic' : ''
-        )}>
-          {t("Business Price (AED)")}
-        </Label>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="space-y-2">
+          <Label>Area</Label>
+          <Select
+            value={filters.areaId}
+            onValueChange={(value) => handleFilterChange('areaId', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select area" />
+            </SelectTrigger>
+            <SelectContent>
+              {areas.map((area) => (
+                <SelectItem key={area.id} value={area.id.toString()}>
+                  {area.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Price Range</Label>
+          <div className="flex gap-2">
             <Input
               type="number"
-              placeholder={t("Min Price")}
+              placeholder="Min"
               value={filters.minPrice || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
-              className={cn(
-                language === 'ar' ? 'font-arabic text-right' : ''
-              )}
+              onChange={(e) => handleFilterChange('minPrice', e.target.value)}
             />
-          </div>
-          <div>
             <Input
               type="number"
-              placeholder={t("Max Price")}
+              placeholder="Max"
               value={filters.maxPrice || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
-              className={cn(
-                language === 'ar' ? 'font-arabic text-right' : ''
-              )}
+              onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
             />
           </div>
         </div>
-      </div>
 
-      <div className={cn(
-        "space-y-2",
-        language === 'ar' ? 'text-right' : ''
-      )}>
-        <Label className={cn(
-          language === 'ar' ? 'font-arabic' : ''
-        )}>
-          {t("Profit Margin (%)")}
-        </Label>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="space-y-2">
+          <Label>Profit Margin (%)</Label>
+          <div className="flex gap-2">
             <Input
               type="number"
-              placeholder={t("Min Margin")}
+              placeholder="Min"
               value={filters.minProfitMargin || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, minProfitMargin: e.target.value }))}
-              className={cn(
-                language === 'ar' ? 'font-arabic text-right' : ''
-              )}
+              onChange={(e) => handleFilterChange('minProfitMargin', e.target.value)}
             />
-          </div>
-          <div>
             <Input
               type="number"
-              placeholder={t("Max Margin")}
+              placeholder="Max"
               value={filters.maxProfitMargin || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, maxProfitMargin: e.target.value }))}
-              className={cn(
-                language === 'ar' ? 'font-arabic text-right' : ''
-              )}
+              onChange={(e) => handleFilterChange('maxProfitMargin', e.target.value)}
             />
           </div>
         </div>
       </div>
 
-      <div className={cn(
-        "space-y-2",
-        language === 'ar' ? 'text-right' : ''
-      )}>
-        <Label className={cn(
-          language === 'ar' ? 'font-arabic' : ''
-        )}>
-          {t("Area")}
-        </Label>
-        <Select
-          value={filters.areaId}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, areaId: value }))}
-        >
-          <SelectTrigger className={cn(
-            language === 'ar' ? 'font-arabic text-right' : ''
-          )}>
-            <SelectValue placeholder={t("Select Area")} />
-          </SelectTrigger>
-          <SelectContent>
-            {areas.map((area) => (
-              <SelectItem 
-                key={area.id} 
-                value={area.id.toString()}
-                className={cn(
-                  language === 'ar' ? 'font-arabic text-right' : ''
-                )}
-              >
-                {language === 'ar' ? area.name_ar : area.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className={cn(
-        "flex gap-4",
-        language === 'ar' ? 'flex-row-reverse' : ''
-      )}>
-        <Button 
-          type="submit"
-          className={cn(
-            "flex-1",
-            language === 'ar' ? 'font-arabic' : ''
-          )}
-        >
-          {t("Filter")}
+      <div className="flex justify-end gap-4">
+        <Button variant="outline" onClick={handleReset}>
+          Reset
         </Button>
-        <Button 
-          type="button"
-          variant="outline"
-          onClick={handleReset}
-          className={cn(
-            "flex-1",
-            language === 'ar' ? 'font-arabic' : ''
-          )}
-        >
-          {t("Reset")}
+        <Button onClick={handleApplyFilters}>
+          Apply Filters
         </Button>
       </div>
-    </form>
+    </div>
   )
 }
 
