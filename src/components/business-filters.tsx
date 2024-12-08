@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { getSupabase } from '@/utils/supabase-client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 
@@ -39,29 +39,43 @@ export default function BusinessFilters({ onFilter, onReset, initialFilters }: B
   const [categories, setCategories] = useState<Category[]>([])
   const [areas, setAreas] = useState<Area[]>([])
   const [filters, setFilters] = useState<FilterParams>(initialFilters || {})
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const fetchData = async () => {
-      const supabase = getSupabase()
-      
-      // Fetch categories
-      const { data: categoriesData } = await supabase
-        .from('business_categories')
-        .select('id, name, slug')
-        .order('name')
-      
-      // Fetch areas
-      const { data: areasData } = await supabase
-        .from('areas')
-        .select('id, name, slug')
-        .order('name')
-      
-      if (categoriesData) setCategories(categoriesData)
-      if (areasData) setAreas(areasData)
+      try {
+        setIsLoading(true)
+        
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('business_categories')
+          .select('id, name, slug')
+          .order('name')
+          .returns<Category[]>()
+        
+        if (categoriesError) throw categoriesError
+        
+        // Fetch areas
+        const { data: areasData, error: areasError } = await supabase
+          .from('areas')
+          .select('id, name, slug')
+          .order('name')
+          .returns<Area[]>()
+        
+        if (areasError) throw areasError
+        
+        if (categoriesData) setCategories(categoriesData)
+        if (areasData) setAreas(areasData)
+      } catch (error) {
+        console.error('Error fetching filter data:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     fetchData()
-  }, [])
+  }, [supabase])
 
   const handleFilterChange = (key: keyof FilterParams, value: string) => {
     const newFilters = { ...filters, [key]: value }
@@ -75,6 +89,25 @@ export default function BusinessFilters({ onFilter, onReset, initialFilters }: B
   const handleReset = () => {
     setFilters({})
     onReset()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-4">
+          <div className="h-9 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -119,7 +152,7 @@ export default function BusinessFilters({ onFilter, onReset, initialFilters }: B
         </div>
 
         <div className="space-y-2">
-          <Label>Price Range</Label>
+          <Label>Price Range (AED)</Label>
           <div className="flex gap-2">
             <Input
               type="number"

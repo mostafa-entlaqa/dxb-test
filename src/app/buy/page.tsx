@@ -3,22 +3,18 @@
 import { Suspense } from 'react'
 import BusinessList from '@/components/business-list'
 import BusinessFilters from '@/components/business-filters'
-import { Building2, ArrowDownWideNarrow, LayoutGrid, TrendingUp } from 'lucide-react'
+import { Building2, ArrowDownWideNarrow, LayoutGrid } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { getSupabase } from '@/utils/supabase-client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cn } from '@/lib/utils'
-
-interface BusinessData {
-  id: number;
-  selling_price: number;
-  category: string;
-}
+import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from '@/components/ui/select'
+import { useSearchParams } from 'next/navigation'
 
 interface InsightsData {
-  active_listings: number;
-  price_range_min: number;
-  price_range_max: number;
-  industries_count: number;
+  active_listings: number
+  price_range_min: number
+  price_range_max: number
+  industries_count: number
 }
 
 interface FilterParams {
@@ -28,48 +24,84 @@ interface FilterParams {
   maxPrice?: string
   minProfitMargin?: string
   maxProfitMargin?: string
+  sortBy?: 'price_asc' | 'price_desc' | 'profit_asc' | 'profit_desc'
+  page?: number
 }
 
 export default function BuyBusinessPage() {
+  const searchParams = useSearchParams()
   const [insights, setInsights] = useState<InsightsData>({
     active_listings: 0,
     price_range_min: 0,
     price_range_max: 0,
     industries_count: 0
   })
-  const [filters, setFilters] = useState<FilterParams>({})
+  const [filters, setFilters] = useState<FilterParams>(() => ({
+    categoryId: searchParams.get('categoryId') || undefined,
+    areaId: searchParams.get('areaId') || undefined,
+    minPrice: searchParams.get('minPrice') || undefined,
+    maxPrice: searchParams.get('maxPrice') || undefined,
+    page: 1
+  }))
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const fetchInsights = async () => {
-      const supabase = getSupabase()
-      const { data: businesses } = await supabase
-        .from('businesses')
-        .select('selling_price, category')
-        .eq('status', 'active')
+      try {
+        setIsLoading(true)
 
-      if (businesses) {
-        const businessData = businesses as BusinessData[]
-        const prices = businessData.map(b => b.selling_price)
-        const categories = new Set(businessData.map(b => b.category))
+        // Get active listings count
+        const { count: activeListings } = await supabase
+          .from('businesses')
+          .select('*', { count: 'exact', head: true })
 
-        setInsights({
-          active_listings: businessData.length,
-          price_range_min: Math.min(...prices),
-          price_range_max: Math.max(...prices),
-          industries_count: categories.size
-        })
+        // Get price range
+        const { data: priceData } = await supabase
+          .from('businesses')
+          .select('selling_price')
+          .order('selling_price', { ascending: true })
+
+        // Get categories count
+        const { count: categoriesCount } = await supabase
+          .from('business_categories')
+          .select('*', { count: 'exact', head: true })
+
+        if (priceData) {
+          const prices = priceData.map(b => b.selling_price).filter(Boolean)
+          
+          setInsights({
+            active_listings: activeListings || 0,
+            price_range_min: prices.length ? Math.min(...prices) : 0,
+            price_range_max: prices.length ? Math.max(...prices) : 0,
+            industries_count: categoriesCount || 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching insights:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchInsights()
-  }, [])
+  }, [supabase])
 
   const handleFilter = (newFilters: FilterParams) => {
-    setFilters(newFilters)
+    // Reset page when applying new filters
+    setFilters({ ...newFilters, page: 1 })
   }
 
   const handleReset = () => {
-    setFilters({})
+    setFilters({ page: 1 })
+  }
+
+  const handleSort = (sortBy: FilterParams['sortBy']) => {
+    setFilters(prev => ({ ...prev, sortBy }))
+  }
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }))
   }
 
   const insightCards = [
@@ -82,15 +114,17 @@ export default function BuyBusinessPage() {
     {
       icon: <ArrowDownWideNarrow className="h-5 w-5" />,
       title: "Price Range",
-      value: `${new Intl.NumberFormat('en-AE', {
-        style: 'currency',
-        currency: 'AED',
-        maximumFractionDigits: 0
-      }).format(insights.price_range_min)} - ${new Intl.NumberFormat('en-AE', {
-        style: 'currency',
-        currency: 'AED',
-        maximumFractionDigits: 0
-      }).format(insights.price_range_max)}`,
+      value: insights.price_range_min === 0 && insights.price_range_max === 0 
+        ? "No listings"
+        : `${new Intl.NumberFormat('en-AE', {
+            style: 'currency',
+            currency: 'AED',
+            maximumFractionDigits: 0
+          }).format(insights.price_range_min)} - ${new Intl.NumberFormat('en-AE', {
+            style: 'currency',
+            currency: 'AED',
+            maximumFractionDigits: 0
+          }).format(insights.price_range_max)}`,
       color: "text-green-600 dark:text-green-400"
     },
     {
@@ -100,6 +134,22 @@ export default function BuyBusinessPage() {
       color: "text-orange-600 dark:text-orange-400"
     }
   ]
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-8" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+            ))}
+          </div>
+          <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -123,7 +173,25 @@ export default function BuyBusinessPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-6">Filters</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold">Filters</h2>
+          <div className="flex gap-4">
+            <Select
+              value={filters.sortBy}
+              onValueChange={(value) => handleSort(value as FilterParams['sortBy'])}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                <SelectItem value="profit_asc">Profit Margin: Low to High</SelectItem>
+                <SelectItem value="profit_desc">Profit Margin: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <BusinessFilters
           onFilter={handleFilter}
           onReset={handleReset}
@@ -131,8 +199,17 @@ export default function BuyBusinessPage() {
         />
       </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
-        <BusinessList filters={filters} />
+      <Suspense fallback={
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      }>
+        <BusinessList 
+          filters={filters}
+          onPageChange={handlePageChange}
+        />
       </Suspense>
     </div>
   )

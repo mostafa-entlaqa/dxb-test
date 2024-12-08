@@ -2,39 +2,100 @@
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Search } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
-import { getSupabase } from '@/utils/supabase-client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface Category {
   id: number
   name: string
+  slug: string
+}
+
+interface Area {
+  id: number
+  name: string
+  slug: string
+}
+
+interface SearchFilters {
+  categoryId?: string
+  areaId?: string
+  minPrice?: string
+  maxPrice?: string
 }
 
 export default function HeroSection() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
+  const [filters, setFilters] = useState<SearchFilters>({})
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const supabase = getSupabase()
-      const { data } = await supabase
-        .from('business_categories')
-        .select('id, name')
-        .order('name')
-      
-      if (data) setCategories(data)
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+        
+        // Fetch categories
+        const { data: categoriesData } = await supabase
+          .from('business_categories')
+          .select('id, name, slug')
+          .order('name')
+        
+        // Fetch areas
+        const { data: areasData } = await supabase
+          .from('areas')
+          .select('id, name, slug')
+          .order('name')
+        
+        if (categoriesData) setCategories(categoriesData)
+        if (areasData) setAreas(areasData)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    fetchCategories()
-  }, [])
+    fetchData()
+  }, [supabase])
 
-  const handleSearch = (categoryId: string) => {
-    router.push(`/buy?category=${categoryId}`)
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Build query string from filters
+    const queryParams = new URLSearchParams()
+    
+    // Only add filters that have values and aren't 'all'
+    if (filters.categoryId && filters.categoryId !== 'all') {
+      queryParams.append('categoryId', filters.categoryId)
+    }
+    if (filters.areaId && filters.areaId !== 'all') {
+      queryParams.append('areaId', filters.areaId)
+    }
+    if (filters.minPrice) {
+      queryParams.append('minPrice', filters.minPrice)
+    }
+    if (filters.maxPrice) {
+      queryParams.append('maxPrice', filters.maxPrice)
+    }
+
+    // Navigate to buy page with filters
+    const queryString = queryParams.toString()
+    router.push(queryString ? `/buy?${queryString}` : '/buy')
+  }
+
+  const handlePriceChange = (type: 'minPrice' | 'maxPrice', value: string) => {
+    // Remove any non-numeric characters and convert to number
+    const numericValue = value.replace(/[^0-9]/g, '')
+    setFilters(prev => ({ ...prev, [type]: numericValue }))
   }
 
   return (
@@ -49,25 +110,85 @@ export default function HeroSection() {
           </p>
         </div>
 
-        <Card className="p-6 md:p-8 max-w-2xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-4">
-            <Select onValueChange={handleSearch}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select business category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="lg" className="md:w-auto">
-              <Search className="mr-2 h-4 w-4" />
-              Search
-            </Button>
-          </div>
+        <Card className="p-6 md:p-8 max-w-3xl mx-auto">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Select
+                  value={filters.categoryId}
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, categoryId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Select
+                  value={filters.areaId}
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, areaId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Areas</SelectItem>
+                    {areas.map((area) => (
+                      <SelectItem key={area.id} value={area.id.toString()}>
+                        {area.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Min Price (AED)"
+                  value={filters.minPrice || ''}
+                  onChange={(e) => handlePriceChange('minPrice', e.target.value)}
+                  className="text-right"
+                />
+              </div>
+              <div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Max Price (AED)"
+                  value={filters.maxPrice || ''}
+                  onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
+                  className="text-right"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-center pt-4">
+              <Button 
+                type="submit"
+                size="lg" 
+                className="w-full md:w-auto min-w-[200px]"
+                disabled={isLoading}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                Search Businesses
+              </Button>
+            </div>
+          </form>
         </Card>
 
         <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
