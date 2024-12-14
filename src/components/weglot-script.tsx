@@ -7,6 +7,8 @@ export function WeglotScript() {
   useEffect(() => {
     const initializeWeglot = () => {
       try {
+        if (!window.Weglot) return
+
         window.Weglot.initialize({
           api_key: 'wg_f648b9aa8dc0a5d8a2d23bb0d2f0f4762',
           originalLanguage: 'en',
@@ -21,10 +23,9 @@ export function WeglotScript() {
             }
           },
           pageReady: () => {
-            // Apply stored language after initialization
             const storedLang = localStorage.getItem('selectedLanguage')
             if (storedLang === 'ar') {
-              window.Weglot.switchTo('ar')
+              window.Weglot?.switchTo('ar')
             }
           }
         })

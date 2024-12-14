@@ -87,87 +87,60 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
         let query = supabase
           .from('businesses')
           .select(`
-            id,
-            opportunity_name,
-            business_name,
-            description,
-            monthly_revenue,
-            profit_margin,
-            selling_price,
-            acquisition_type,
-            featured,
-            images,
-            revenue,
-            cost,
-            category_id,
-            area_id,
-            min_price,
-            max_price,
-            min_profit_margin,
-            created_at,
-            updated_at,
-            business_categories!inner (
+            *,
+            business_categories:business_categories!inner (
               id,
               name,
               name_ar,
               slug
             ),
-            areas!inner (
+            areas:areas!inner (
               id,
               name,
               name_ar,
               slug
             )
           `, { count: 'exact' })
+          .range(from, to)
 
         // Apply filters
         if (filters?.categoryId) {
-          query = query.eq('category_id', parseInt(filters.categoryId))
+          query = query.eq('category_id', filters.categoryId)
         }
         if (filters?.areaId) {
-          query = query.eq('area_id', parseInt(filters.areaId))
+          query = query.eq('area_id', filters.areaId)
         }
         if (filters?.minPrice) {
-          query = query.gte('selling_price', parseFloat(filters.minPrice))
+          query = query.gte('selling_price', filters.minPrice)
         }
         if (filters?.maxPrice) {
-          query = query.lte('selling_price', parseFloat(filters.maxPrice))
+          query = query.lte('selling_price', filters.maxPrice)
         }
         if (filters?.minProfitMargin) {
-          query = query.gte('profit_margin', parseFloat(filters.minProfitMargin))
+          query = query.gte('profit_margin', filters.minProfitMargin)
         }
         if (filters?.maxProfitMargin) {
-          query = query.lte('profit_margin', parseFloat(filters.maxProfitMargin))
+          query = query.lte('profit_margin', filters.maxProfitMargin)
         }
 
         // Apply sorting
-        switch (filters?.sortBy) {
-          case 'price_asc':
-            query = query.order('selling_price', { ascending: true })
-            break
-          case 'price_desc':
-            query = query.order('selling_price', { ascending: false })
-            break
-          case 'profit_asc':
-            query = query.order('profit_margin', { ascending: true })
-            break
-          case 'profit_desc':
-            query = query.order('profit_margin', { ascending: false })
-            break
-          default:
-            // Default sorting: Featured first, then by created_at
-            query = query.order('featured', { ascending: false })
-                        .order('created_at', { ascending: false })
+        if (filters?.sortBy) {
+          const [field, direction] = filters.sortBy.split('_')
+          query = query.order(field, { ascending: direction === 'asc' })
         }
-
-        // Apply pagination
-        query = query.range(from, to)
 
         const { data, error, count } = await query
 
         if (error) throw error
 
-        setBusinesses(data as Business[] || [])
+        // Transform the data to match the Business interface
+        const transformedData = data?.map(item => ({
+          ...item,
+          business_categories: item.business_categories[0], // Take first category
+          areas: item.areas[0], // Take first area
+        })) as Business[]
+
+        setBusinesses(transformedData || [])
         setTotalCount(count || 0)
       } catch (error) {
         console.error('Error fetching businesses:', error)
@@ -225,7 +198,7 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
           )}>
             <div className="relative h-48">
               <img
-                src={business.images[0] || '/placeholder-business.jpg'}
+                src={business.images?.[0] || '/placeholder-business.jpg'}
                 alt={business.opportunity_name}
                 className="absolute inset-0 w-full h-full object-cover rounded-t-xl"
               />
@@ -240,7 +213,7 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
               <CardTitle className="text-xl">{business.opportunity_name}</CardTitle>
               <CardDescription className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                {business.business_categories.name}
+                {business.business_categories?.name || 'Uncategorized'}
               </CardDescription>
             </CardHeader>
             
@@ -254,14 +227,14 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
                       style: 'currency',
                       currency: 'AED',
                       maximumFractionDigits: 0
-                    }).format(business.selling_price)}
+                    }).format(business.selling_price || 0)}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Profit Margin</div>
                   <div className="font-semibold flex items-center">
                     <Percent className="h-4 w-4" />
-                    {business.profit_margin}%
+                    {business.profit_margin || 0}%
                   </div>
                 </div>
               </div>
@@ -269,7 +242,7 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  {business.areas.name}
+                  {business.areas?.name || 'Location not specified'}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />

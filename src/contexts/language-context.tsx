@@ -83,6 +83,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (window.Weglot && isReady) {
       const translateContent = () => {
         try {
+          // Add null check before accessing Weglot methods
+          if (!window.Weglot) return
+
           // Force re-translation of the entire page
           window.Weglot.refresh()
 
@@ -99,7 +102,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           }))
 
           if (elements.length > 0) {
-            window.Weglot.translate({
+            window.Weglot?.translate({
               elements,
               language: currentLanguage,
               ignoredClasses: ['no-translate']
@@ -120,22 +123,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [currentLanguage, isReady, pathname])
 
   const setLanguage = (lang: string) => {
-    if (window.Weglot) {
-      try {
-        // Update Weglot and local state
-        window.Weglot.switchTo(lang)
-        localStorage.setItem('selectedLanguage', lang)
-        setCurrentLanguage(lang)
-        updateDirection(lang)
-        
-        // Force reflow to ensure styles are applied
-        const root = document.documentElement
-        root.style.display = 'none'
-        root.offsetHeight // Force reflow
-        root.style.display = ''
-      } catch (error) {
-        console.error('Error switching language:', error)
-      }
+    if (!window.Weglot) return
+
+    try {
+      // Update Weglot and local state
+      window.Weglot.switchTo(lang)
+      localStorage.setItem('selectedLanguage', lang)
+      setCurrentLanguage(lang)
+      updateDirection(lang)
+      
+      // Force reflow to ensure styles are applied
+      const root = document.documentElement
+      root.style.display = 'none'
+      root.offsetHeight // Force reflow
+      root.style.display = ''
+    } catch (error) {
+      console.error('Error switching language:', error)
     }
   }
 

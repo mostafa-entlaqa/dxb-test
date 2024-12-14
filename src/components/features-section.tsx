@@ -7,24 +7,28 @@ import { cn } from '@/lib/utils'
 export default function FeaturesSection() {
   const buyerFeatures = [
     {
+      id: 'b1',
       icon: <FileText className="h-6 w-6 mr-3" />,
       title: "Business Information",
       description: "Comprehensive details on each listed business",
       size: "large"
     },
     {
+      id: 'b2',
       icon: <CheckCircle className="h-5 w-5 mr-2" />,
       title: "Validation",
       description: "Verified listings for your peace of mind",
       size: "small"
     },
     {
+      id: 'b3',
       icon: <BarChart className="h-5 w-5 mr-2" />,
       title: "Numbers is Everything",
       description: "Detailed financial data and performance metrics",
       size: "small"
     },
     {
+      id: 'b4',
       icon: <Brain className="h-5 w-5 mr-2" />,
       title: "Powered by AI",
       description: "AI-driven insights and recommendations",
@@ -34,24 +38,28 @@ export default function FeaturesSection() {
 
   const sellerFeatures = [
     {
+      id: 's1',
       icon: <Users className="h-6 w-6 mr-3" />,
       title: "Reach More People",
       description: "Connect with a wide network of potential buyers",
       size: "large"
     },
     {
+      id: 's2',
       icon: <Clock className="h-5 w-5 mr-2" />,
       title: "Sell in a Week",
       description: "Streamlined process for quick sales",
       size: "small"
     },
     {
+      id: 's3',
       icon: <Lock className="h-5 w-5 mr-2" />,
       title: "Privacy",
       description: "Confidential listings to protect your business",
       size: "small"
     },
     {
+      id: 's4',
       icon: <Sparkles className="h-5 w-5 mr-2" />,
       title: "AI Assistance",
       description: "AI-assisted valuation and listing optimization",
@@ -102,8 +110,10 @@ export default function FeaturesSection() {
               For Buyers
             </h3>
             <div className="grid gap-6">
-              {buyerFeatures.map((feature, index) => (
-                renderFeatureCard(feature, 'border-blue-500')
+              {buyerFeatures.map((feature) => (
+                <div key={feature.id}>
+                  {renderFeatureCard(feature, 'border-blue-500')}
+                </div>
               ))}
             </div>
           </div>
@@ -116,8 +126,10 @@ export default function FeaturesSection() {
               For Sellers
             </h3>
             <div className="grid gap-6">
-              {sellerFeatures.map((feature, index) => (
-                renderFeatureCard(feature, 'border-orange-500')
+              {sellerFeatures.map((feature) => (
+                <div key={feature.id}>
+                  {renderFeatureCard(feature, 'border-orange-500')}
+                </div>
               ))}
             </div>
           </div>

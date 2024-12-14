@@ -1,54 +1,33 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export const dynamic = 'force-dynamic'
-
-export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies })
-  
+export async function GET(request: NextRequest) {
   try {
     const requestUrl = new URL(request.url)
     const code = requestUrl.searchParams.get('code')
+    const next = requestUrl.searchParams.get('next') || '/dashboard'
 
-    if (!code) {
-      return NextResponse.redirect(
-        new URL('/login?status=confirmation-error&message=Invalid verification link', request.url)
-      )
+    if (code) {
+      const supabase = createRouteHandlerClient({ cookies })
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) {
+        // If there's an error, redirect to login with error message
+        return NextResponse.redirect(
+          new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url)
+        )
+      }
     }
 
-    // First, exchange the code for a session
-    const { data: { session }, error: authError } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (authError) throw authError
-    if (!session?.user) throw new Error('No user found')
-
-    // Disable RLS temporarily for this check
-    const { data: profile, error: profileError } = await supabase.rpc('get_user_profile', {
-      user_id: session.user.id
-    })
-
-    if (profileError) {
-      console.error('Profile check error:', profileError)
-      // If error is "function not found", we need to create it
-      await supabase.rpc('create_user_profile', {
-        user_id: session.user.id,
-        user_email: session.user.email
-      })
-      return NextResponse.redirect(new URL('/complete-profile', request.url))
-    }
-
-    // Profile exists, check completion status
-    if (profile?.profile_completed) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else {
-      return NextResponse.redirect(new URL('/complete-profile', request.url))
-    }
-
+    // Successful auth - redirect to the next URL or dashboard
+    return NextResponse.redirect(new URL(next, request.url))
   } catch (error) {
+    // Handle any unexpected errors
     console.error('Auth callback error:', error)
     return NextResponse.redirect(
-      new URL('/login?status=confirmation-error&message=Authentication failed', request.url)
+      new URL('/login?error=Authentication%20failed', request.url)
     )
   }
 } 
