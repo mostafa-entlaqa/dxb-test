@@ -3,19 +3,25 @@ import { type LucideIcon, CreditCard } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from "../../../components/ui/alert"
 import { Button } from "../../../components/ui/button"
 import { useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Step5Props {
   icon: LucideIcon
 }
 
 export default function Step5({ icon: Icon }: Step5Props) {
-  const { watch } = useFormContext()
+  const { watch, getValues, setValue } = useFormContext()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const listingType = watch('listingType')
   const success = searchParams.get('success')
 
   const generateStripePaymentLink = async () => {
     try {
+      const formData = getValues()
+      sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -34,6 +40,21 @@ export default function Step5({ icon: Icon }: Step5Props) {
       return null
     }
   }
+
+  useEffect(() => {
+    if (success === 'true') {
+      const savedData = sessionStorage.getItem('businessListingForm')
+      if (savedData) {
+        const formData = JSON.parse(savedData)
+        Object.entries(formData).forEach(([key, value]) => {
+          if (value !== undefined) {
+            setValue(key, value)
+          }
+        })
+      }
+      setValue('listingType', 'paid')
+    }
+  }, [success, setValue])
 
   if (listingType === 'free' && !success) {
     return (

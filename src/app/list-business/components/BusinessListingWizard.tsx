@@ -25,7 +25,7 @@ import { PostBusinessSchema } from './dto'
 type FormData = z.infer<typeof PostBusinessSchema>
 
 export default function BusinessListingWizard(): JSX.Element {
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(sessionStorage.getItem('step') ? parseInt(sessionStorage.getItem('step') as string) : 1)
   const router = useRouter()
   const supabase = createClientComponentClient<Database>()
   const searchParams = useSearchParams()
@@ -41,6 +41,19 @@ export default function BusinessListingWizard(): JSX.Element {
     }
   })
 
+  const handleStepForm = (theStep: number) => {
+    if (step < 5) {
+      setStep(theStep)
+      sessionStorage.setItem('step', theStep.toString())
+    }
+  }
+
+// useEffect(() => {
+//   if(!searchParams.get('session_id')) {
+//     sessionStorage.removeItem('businessListingForm')
+//   }
+// },[])
+
   useEffect(() => {
     // Load saved form data from session storage
     const savedData = sessionStorage.getItem('businessListingForm')
@@ -54,7 +67,10 @@ export default function BusinessListingWizard(): JSX.Element {
         console.error('Error parsing saved form data:', error)
       }
     }
-  }, [methods])
+    if (!success) {
+      methods.setValue('listingType', 'free')
+    }
+  }, [methods, success])
 
   // const verifyPaymentStatus = async (userId: string): Promise<boolean> => {
   //   try {
@@ -98,7 +114,7 @@ export default function BusinessListingWizard(): JSX.Element {
         // Save form data to session storage
         const formData = methods.getValues()
         sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
-        setStep(step + 1)
+        handleStepForm(step + 1)
       } else {
         // Handle final submission
         const data = methods.getValues()
@@ -107,7 +123,7 @@ export default function BusinessListingWizard(): JSX.Element {
         try {
           // Verify payment status if user selected premium
           const isPaid = searchParams.get('success') ?? false
-
+          
           // Handle file uploads
           const imageUrls = []
           if (data.images?.length) {
@@ -167,9 +183,15 @@ export default function BusinessListingWizard(): JSX.Element {
   
 
           console.log('isPaid', isPaid)
-         
+          console.log(data)
+          if (isPaid)  {
+            methods.setValue('listingType', 'paid')
+          }
+           const session_id = searchParams.get('session_id')
+
           const { error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
+            session_id: session_id ?? null,
             featured: isPaid, // Set featured based on payment verification
             business_name: data.businessName,
             opportunity_name: data.opportunityName,
@@ -198,6 +220,8 @@ export default function BusinessListingWizard(): JSX.Element {
 
           // Clear session storage after successful submission
           sessionStorage.removeItem('businessListingForm')
+          sessionStorage.removeItem('step')
+         
 
           // Show appropriate success message
           const message = wantsPremium 
