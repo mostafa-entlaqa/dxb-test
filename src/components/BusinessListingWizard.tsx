@@ -17,7 +17,26 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from './ui/use-toast'
 import { v4 as uuidv4 } from 'uuid'
 
-// ... (keep all the schema definitions the same)
+const formSchema = z.object({
+  listingType: z.enum(['free', 'paid']),
+  businessName: z.string().min(1).max(255),
+  description: z.string().min(10).max(2000),
+  opportunityName: z.string().min(1).max(255),
+  acquisition_type: z.enum(['Buy', 'Invest']),
+  investmentPercentage: z.number().min(1).max(100).optional().nullable(),
+  images: z.any().optional(),
+  area_id: z.number(),
+  category_id: z.number(),
+  monthlyRevenue: z.number().min(0),
+  profitMargin: z.number().min(0).max(100),
+  sellingPrice: z.number().min(0),
+  revenuePerYear: z.record(z.string(), z.number()).default({}),
+  cost: z.record(z.string(), z.number()).default({}),
+  presentation: z.any().optional(),
+  financialStatement: z.any().optional(),
+})
+
+type FormData = z.infer<typeof formSchema>
 
 export default function BusinessListingWizard() {
   const [step, setStep] = useState(1)
@@ -27,12 +46,12 @@ export default function BusinessListingWizard() {
   const success = searchParams.get('success')
 
   const methods = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
+      listingType: success ? 'paid' : 'free',
       revenuePerYear: {},
-      cost: {},
-      listingType: success ? 'paid' : 'free'
+      cost: {}
     }
   })
 
@@ -40,20 +59,18 @@ export default function BusinessListingWizard() {
     // Load saved form data from session storage
     const savedData = sessionStorage.getItem('businessListingForm')
     if (savedData) {
-      const parsedData = JSON.parse(savedData)
-      Object.keys(parsedData).forEach(key => {
-        methods.setValue(key as keyof FormData, parsedData[key])
-      })
-      
-      // Clear session storage after loading
-      if (success === 'true') {
-        sessionStorage.removeItem('businessListingForm')
+      try {
+        const parsedData = JSON.parse(savedData)
+        Object.keys(parsedData).forEach(key => {
+          methods.setValue(key as keyof FormData, parsedData[key])
+        })
+      } catch (error) {
+        console.error('Error parsing saved form data:', error)
       }
     }
-  }, [success, methods])
+  }, [methods])
 
   const handleNext = async () => {
-    // Check authentication only when trying to proceed
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       toast({
@@ -70,7 +87,7 @@ export default function BusinessListingWizard() {
     
     if (isValid) {
       if (step < 5) {
-        // Save form data to session storage after each step
+        // Save form data to session storage
         const formData = methods.getValues()
         sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
         setStep(step + 1)
@@ -80,7 +97,7 @@ export default function BusinessListingWizard() {
         const isPaid = data.listingType === 'paid' || success === 'true'
 
         try {
-          // Handle file uploads first
+          // Handle file uploads
           const imageUrls = []
           if (data.images?.length) {
             for (const file of data.images) {
@@ -100,15 +117,14 @@ export default function BusinessListingWizard() {
             }
           }
 
-          // Handle other file uploads similarly
           let presentationUrl = null
           if (data.presentation?.[0]) {
             const file = data.presentation[0]
             const fileExt = file.name.split('.').pop()
             const fileName = `${uuidv4()}.${fileExt}`
             const { error: uploadError, data: uploadData } = await supabase.storage
-              .from('presentations')
-              .upload(fileName, file)
+                .from('presentations')
+                .upload(fileName, file)
 
             if (uploadError) throw uploadError
             if (uploadData) {
@@ -125,8 +141,8 @@ export default function BusinessListingWizard() {
             const fileExt = file.name.split('.').pop()
             const fileName = `${uuidv4()}.${fileExt}`
             const { error: uploadError, data: uploadData } = await supabase.storage
-              .from('financial-statements')
-              .upload(fileName, file)
+                .from('financial-statements')
+                .upload(fileName, file)
 
             if (uploadError) throw uploadError
             if (uploadData) {
@@ -137,8 +153,8 @@ export default function BusinessListingWizard() {
             }
           }
 
-          // Insert the business listing
-          const { data: business, error: businessError } = await supabase.from('businesses').insert({
+          // Insert business listing
+          const { error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
             featured: isPaid,
             business_name: data.businessName,
@@ -161,7 +177,7 @@ export default function BusinessListingWizard() {
             max_profit_margin: data.profitMargin * 1.1,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }).select().single()
+          })
 
           if (businessError) throw businessError
 
@@ -203,7 +219,7 @@ export default function BusinessListingWizard() {
       case 3:
         return ['monthlyRevenue', 'profitMargin', 'sellingPrice', 'revenuePerYear', 'cost']
       case 4:
-        return []
+        return ['images', 'presentation', 'financialStatement']
       case 5:
         return []
       default:
