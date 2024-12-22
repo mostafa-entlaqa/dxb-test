@@ -16,6 +16,12 @@ export async function POST(request: Request) {
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
+    
+    const { data } = await supabase.from('settings').select('value').eq('key', 'paid_post_price').single()
+    console.log('data of Price', data)
+    
+    // Convert the price from database (1499) to cents for Stripe (149900)
+    const priceInCents = parseInt(data?.value || '1499') * 100
 
     // Create Stripe checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -28,7 +34,7 @@ export async function POST(request: Request) {
               name: 'Premium Business Listing',
               description: 'Featured listing for 1 month with enhanced visibility',
             },
-            unit_amount: 149900, // 1,499 AED in cents
+            unit_amount: priceInCents, // Using price from database converted to cents
           },
           quantity: 1,
         },
