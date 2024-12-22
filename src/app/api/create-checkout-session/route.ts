@@ -38,7 +38,8 @@ export async function POST(request: Request) {
       cancel_url: `${request.headers.get('origin')}/list-business?canceled=true`,
       metadata: {
         userId: session.user.id
-      }
+      },
+      customer_email: session.user.email // Pre-fill customer email
     })
 
     return NextResponse.json({ url: checkoutSession.url })

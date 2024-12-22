@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from "./ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Button } from "../../../components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../../components/ui/card"
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
@@ -14,39 +14,25 @@ import Step5 from './Step5'
 import { ChevronRight, ChevronLeft, DollarSign, Building, FileText, CheckCircle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { toast } from './ui/use-toast'
+import { toast } from '../../../components/ui/use-toast'
 import { v4 as uuidv4 } from 'uuid'
+import type { Database } from '@/types/supabase'
+import { PostBusinessSchema } from './dto'
 
-const formSchema = z.object({
-  listingType: z.enum(['free', 'paid']),
-  businessName: z.string().min(1).max(255),
-  description: z.string().min(10).max(2000),
-  opportunityName: z.string().min(1).max(255),
-  acquisition_type: z.enum(['Buy', 'Invest']),
-  investmentPercentage: z.number().min(1).max(100).optional().nullable(),
-  images: z.any().optional(),
-  area_id: z.number(),
-  category_id: z.number(),
-  monthlyRevenue: z.number().min(0),
-  profitMargin: z.number().min(0).max(100),
-  sellingPrice: z.number().min(0),
-  revenuePerYear: z.record(z.string(), z.number()).default({}),
-  cost: z.record(z.string(), z.number()).default({}),
-  presentation: z.any().optional(),
-  financialStatement: z.any().optional(),
-})
 
-type FormData = z.infer<typeof formSchema>
 
-export default function BusinessListingWizard() {
+
+type FormData = z.infer<typeof PostBusinessSchema>
+
+export default function BusinessListingWizard(): JSX.Element {
   const [step, setStep] = useState(1)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClientComponentClient<Database>()
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
 
   const methods = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(PostBusinessSchema),
     mode: 'onChange',
     defaultValues: {
       listingType: success ? 'paid' : 'free',
@@ -69,6 +55,28 @@ export default function BusinessListingWizard() {
       }
     }
   }, [methods])
+
+  // const verifyPaymentStatus = async (userId: string): Promise<boolean> => {
+  //   try {
+  //     const { data: invoices, error } = await supabase
+  //       .from('invoices')
+  //       .select('*')
+  //       .eq('user_id', userId)
+  //       .eq('status', 'paid')
+  //       .order('created_at', { ascending: false })
+  //       .limit(1)
+
+  //     if (error) {
+  //       console.error('Error verifying payment:', error)
+  //       return false
+  //     }
+
+  //     return invoices && invoices.length > 0
+  //   } catch (error) {
+  //     console.error('Error verifying payment:', error)
+  //     return false
+  //   }
+  // }
 
   const handleNext = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -94,9 +102,12 @@ export default function BusinessListingWizard() {
       } else {
         // Handle final submission
         const data = methods.getValues()
-        const isPaid = data.listingType === 'paid' || success === 'true'
+        const wantsPremium = data.listingType === 'paid'
 
         try {
+          // Verify payment status if user selected premium
+          const isPaid = searchParams.get('success') ?? false
+
           // Handle file uploads
           const imageUrls = []
           if (data.images?.length) {
@@ -153,10 +164,13 @@ export default function BusinessListingWizard() {
             }
           }
 
-          // Insert business listing
+  
+
+          console.log('isPaid', isPaid)
+         
           const { error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
-            featured: isPaid,
+            featured: isPaid, // Set featured based on payment verification
             business_name: data.businessName,
             opportunity_name: data.opportunityName,
             description: data.description,
@@ -179,17 +193,25 @@ export default function BusinessListingWizard() {
             updated_at: new Date().toISOString()
           })
 
+          console.log(data)
           if (businessError) throw businessError
 
           // Clear session storage after successful submission
           sessionStorage.removeItem('businessListingForm')
 
+          // Show appropriate success message
+          const message = wantsPremium 
+            ? isPaid 
+              ? "Your premium business listing has been submitted successfully."
+              : "Your business listing has been submitted as a free listing. You can upgrade to premium later."
+            : "Your free business listing has been submitted successfully."
+
           toast({
             title: "Success!",
-            description: "Your business listing has been submitted successfully.",
+            description: message,
           })
           
-          router.push('/dashboard')
+          // router.push('/dashboard')
         } catch (error) {
           console.error('Error submitting form:', error)
           toast({

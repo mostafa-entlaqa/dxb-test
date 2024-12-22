@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import BusinessListingWizard from '@/components/BusinessListingWizard'
+import BusinessListingWizard from '@/app/list-business/components/BusinessListingWizard'
 import { toast } from '@/components/ui/use-toast'
 
 export default function ListBusinessPage() {

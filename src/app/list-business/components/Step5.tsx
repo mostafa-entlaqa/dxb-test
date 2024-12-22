@@ -1,7 +1,7 @@
 import { useFormContext } from 'react-hook-form'
 import { type LucideIcon, CreditCard } from 'lucide-react'
-import { Alert, AlertTitle, AlertDescription } from "./ui/alert"
-import { Button } from "./ui/button"
+import { Alert, AlertTitle, AlertDescription } from "../../../components/ui/alert"
+import { Button } from "../../../components/ui/button"
 import { useSearchParams } from 'next/navigation'
 
 interface Step5Props {

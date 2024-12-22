@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       // Create invoice record
       const { error: invoiceError } = await supabase.from('invoices').insert({
         user_id: userId,
+        business_id: null, // Will be updated when business is created
         amount: session.amount_total! / 100, // Convert from cents to AED
         currency: session.currency?.toUpperCase() || 'AED',
         status: 'paid',
@@ -56,6 +57,8 @@ export async function POST(request: Request) {
         console.error('Error creating invoice:', invoiceError)
         throw invoiceError
       }
+
+      console.log('Payment processed and invoice created for user:', userId)
     }
 
     return new NextResponse('Webhook processed successfully', { status: 200 })

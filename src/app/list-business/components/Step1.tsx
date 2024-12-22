@@ -1,11 +1,11 @@
 'use client'
 
 import { useFormContext } from 'react-hook-form'
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
-import { Label } from "./ui/label"
+import { RadioGroup, RadioGroupItem } from "../../../components/ui/radio-group"
+import { Label } from "../../../components/ui/label"
 import { TypeIcon as type, LucideIcon } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { toast } from './ui/use-toast'
+import { toast } from '../../../components/ui/use-toast'
 import { useSearchParams } from 'next/navigation'
 
 interface Step1Props {
@@ -13,18 +13,23 @@ interface Step1Props {
 }
 
 export default function Step1({ icon: Icon }: Step1Props) {
-  const { formState: { errors }, setValue, watch } = useFormContext()
+  const { formState: { errors }, setValue, getValues, watch } = useFormContext()
   const [isLoading, setIsLoading] = useState(false)
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
+  const canceled = searchParams.get('canceled')
   const listingType = watch('listingType')
 
   useEffect(() => {
-    // If payment was successful, set to paid and disable free option
-    if (success === 'true') {
+    // Reset to free if payment was canceled
+    if (canceled) {
+      setValue('listingType', 'free')
+    }
+    // Set to paid only if payment was successful
+    else if (success === 'true') {
       setValue('listingType', 'paid')
     }
-  }, [success, setValue])
+  }, [success, canceled, setValue])
 
   const handleListingTypeChange = async (value: string) => {
     if (success === 'true' && value === 'free') {
@@ -32,8 +37,6 @@ export default function Step1({ icon: Icon }: Step1Props) {
       return
     }
 
-    setValue('listingType', value, { shouldValidate: true })
-    
     if (value === 'paid') {
       try {
         setIsLoading(true)
@@ -50,10 +53,9 @@ export default function Step1({ icon: Icon }: Step1Props) {
 
         const { url } = await response.json()
         if (url) {
-          // Save form data to session storage before redirecting
-          const formData = watch()
-          sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
+          // Don't set the value until payment is confirmed
           window.location.href = url
+          return
         }
       } catch (error) {
         console.error('Checkout error:', error)
@@ -62,11 +64,12 @@ export default function Step1({ icon: Icon }: Step1Props) {
           description: "Failed to initiate payment. Please try again.",
           variant: "destructive"
         })
-        setValue('listingType', 'free')
       } finally {
         setIsLoading(false)
       }
     }
+
+    setValue('listingType', value, { shouldValidate: true })
   }
 
   return (
@@ -77,7 +80,7 @@ export default function Step1({ icon: Icon }: Step1Props) {
       </div>
       <div>
         <RadioGroup 
-          defaultValue={success === 'true' ? 'paid' : 'free'}
+          defaultValue="free"
           onValueChange={handleListingTypeChange}
           className={errors.listingType ? "border-red-500 border rounded-lg p-2" : ""}
           disabled={isLoading}
@@ -106,6 +109,9 @@ export default function Step1({ icon: Icon }: Step1Props) {
             <Label htmlFor="paid" className="flex-grow cursor-pointer">
               <div className="font-medium">Premium Listing - 1,499 AED</div>
               <p className="text-sm text-gray-500">Enhanced visibility and premium features</p>
+              {success === 'true' && (
+                <p className="text-green-600 text-sm mt-1">✓ Payment completed</p>
+              )}
             </Label>
           </div>
         </RadioGroup>
