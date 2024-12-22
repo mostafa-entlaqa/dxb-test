@@ -63,7 +63,7 @@ export default function SellPage() {
             Time is money! Don't let your business sale drag on for months.
           </p>
           <Button size="lg" asChild className="bg-white text-blue-600 hover:bg-blue-50">
-            <Link href="/sell" className="flex items-center">
+            <Link href="/list-business" className="flex items-center">
               List Your Business
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

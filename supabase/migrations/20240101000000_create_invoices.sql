@@ -2,7 +2,7 @@
 CREATE TABLE invoices (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users(id) NOT NULL,
-    business_id UUID REFERENCES businesses(id) NOT NULL,
+    business_id BIGINT REFERENCES businesses(id), -- Made nullable
     amount DECIMAL(10,2) NOT NULL,
     currency TEXT NOT NULL DEFAULT 'AED',
     status TEXT NOT NULL DEFAULT 'pending',

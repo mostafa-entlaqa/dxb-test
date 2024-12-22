@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from "../../../components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../../components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
@@ -14,25 +14,42 @@ import Step5 from './Step5'
 import { ChevronRight, ChevronLeft, DollarSign, Building, FileText, CheckCircle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { toast } from '../../../components/ui/use-toast'
+import { toast } from '@/components/ui/use-toast'
 import { v4 as uuidv4 } from 'uuid'
 import type { Database } from '@/types/supabase'
-import { PostBusinessSchema } from './dto'
 
+const formSchema = z.object({
+  listingType: z.enum(['free', 'paid']),
+  businessName: z.string().min(1).max(255),
+  description: z.string().min(10).max(2000),
+  opportunityName: z.string().min(1).max(255),
+  acquisition_type: z.enum(['Buy', 'Invest']),
+  investmentPercentage: z.number().min(1).max(100).optional().nullable(),
+  images: z.any().optional(),
+  area_id: z.number(),
+  category_id: z.number(),
+  monthlyRevenue: z.number().min(0),
+  profitMargin: z.number().min(0).max(100),
+  sellingPrice: z.number().min(0),
+  revenuePerYear: z.record(z.string(), z.number()).default({}),
+  cost: z.record(z.string(), z.number()).default({}),
+  presentation: z.any().optional(),
+  financialStatement: z.any().optional(),
+})
 
-
-
-type FormData = z.infer<typeof PostBusinessSchema>
+type FormData = z.infer<typeof formSchema>
 
 export default function BusinessListingWizard(): JSX.Element {
   const [step, setStep] = useState(sessionStorage.getItem('step') ? parseInt(sessionStorage.getItem('step') as string) : 1)
   const router = useRouter()
+  const [freeMode, setFreeMode] = useState(false)
   const supabase = createClientComponentClient<Database>()
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
+  const sessionId = searchParams.get('session_id')
 
   const methods = useForm<FormData>({
-    resolver: zodResolver(PostBusinessSchema),
+    resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
       listingType: success ? 'paid' : 'free',
@@ -40,19 +57,6 @@ export default function BusinessListingWizard(): JSX.Element {
       cost: {}
     }
   })
-
-  const handleStepForm = (theStep: number) => {
-    if (step < 5) {
-      setStep(theStep)
-      sessionStorage.setItem('step', theStep.toString())
-    }
-  }
-
-// useEffect(() => {
-//   if(!searchParams.get('session_id')) {
-//     sessionStorage.removeItem('businessListingForm')
-//   }
-// },[])
 
   useEffect(() => {
     // Load saved form data from session storage
@@ -63,36 +67,87 @@ export default function BusinessListingWizard(): JSX.Element {
         Object.keys(parsedData).forEach(key => {
           methods.setValue(key as keyof FormData, parsedData[key])
         })
+        if(!success) {
+          methods.setValue('listingType', 'free')
+        }
       } catch (error) {
         console.error('Error parsing saved form data:', error)
       }
     }
-    if (!success) {
-      methods.setValue('listingType', 'free')
+
+
+
+const handleNextStep = (TheStep: number) => {
+  setStep(TheStep)
+  sessionStorage.setItem('step', TheStep.toString())
+}
+
+    // Create invoice if payment was successful
+    const createInvoice = async () => {
+      if (success && sessionId) {
+        try {
+          const response = await fetch('/api/verify-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sessionId })
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to verify payment')
+          }
+
+          const session = await response.json()
+          
+          if (session.payment_status === 'paid') {
+            const { error } = await supabase.from('invoices').insert({
+              user_id: session.metadata.userId,
+              amount: session.amount_total / 100,
+              currency: session.currency?.toUpperCase() || 'AED',
+              status: 'paid',
+              stripe_payment_intent_id: session.payment_intent,
+              stripe_invoice_id: session.id,
+              payment_date: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+
+            if (error) {
+              console.error('Error creating invoice:', error)
+            }
+          }
+        } catch (error) {
+          console.error('Error processing payment:', error)
+        }
+      }
     }
-  }, [methods, success])
 
-  // const verifyPaymentStatus = async (userId: string): Promise<boolean> => {
-  //   try {
-  //     const { data: invoices, error } = await supabase
-  //       .from('invoices')
-  //       .select('*')
-  //       .eq('user_id', userId)
-  //       .eq('status', 'paid')
-  //       .order('created_at', { ascending: false })
-  //       .limit(1)
+    createInvoice()
+  }, [success, sessionId, supabase, methods])
 
-  //     if (error) {
-  //       console.error('Error verifying payment:', error)
-  //       return false
-  //     }
+  const verifyPaymentStatus = async (userId: string): Promise<boolean> => {
+    try {
+      // Check if there's a paid invoice for this session
+      const { data: invoices, error } = await supabase
+        .from('invoices')
+        .select('*')
+        // .eq('stripe_invoice_id', sessionId)
 
-  //     return invoices && invoices.length > 0
-  //   } catch (error) {
-  //     console.error('Error verifying payment:', error)
-  //     return false
-  //   }
-  // }
+      
+      if (error) {
+        console.error('Error verifying payment:', error)
+        return false
+      }
+      console.log(invoices)
+
+      // Check if we have at least one invoice
+      return invoices && invoices.length > 0
+    } catch (error) {
+      console.error('Error verifying payment:', error)
+      return false
+    }
+  }
 
   const handleNext = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -109,12 +164,17 @@ export default function BusinessListingWizard(): JSX.Element {
     const fields = getFieldsForStep(step)
     const isValid = await methods.trigger(fields)
     
+const handleNextStep = (TheStep: number) => {
+  setStep(TheStep)
+  sessionStorage.setItem('step', TheStep.toString())
+}
+    
     if (isValid) {
       if (step < 5) {
         // Save form data to session storage
         const formData = methods.getValues()
         sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
-        handleStepForm(step + 1)
+        handleNextStep(step + 1)
       } else {
         // Handle final submission
         const data = methods.getValues()
@@ -122,8 +182,8 @@ export default function BusinessListingWizard(): JSX.Element {
 
         try {
           // Verify payment status if user selected premium
-          const isPaid = searchParams.get('success') ?? false
-          
+          const isPaid = wantsPremium ? await verifyPaymentStatus(session.user.id) : false
+
           // Handle file uploads
           const imageUrls = []
           if (data.images?.length) {
@@ -179,19 +239,21 @@ export default function BusinessListingWizard(): JSX.Element {
               financialStatementUrl = publicUrl
             }
           }
+           if (methods.getValues('listingType') === 'paid') {
+            const { error } = await supabase.from('invoices').select('*').eq('stripe_invoice_id', sessionId).single()
+            if (error) {
+              setFreeMode(true)
+            }
+           }
 
-  
-
-          console.log('isPaid', isPaid)
-          console.log(data)
-          if (isPaid)  {
-            methods.setValue('listingType', 'paid')
-          }
-           const session_id = searchParams.get('session_id')
-
-          const { error: businessError } = await supabase.from('businesses').insert({
+           console.log('data',data)
+           console.log('freeMode',freeMode)
+           console.log('sessionId',sessionId)
+           console.log('isPaid',isPaid)
+           // Insert business listing with verified payment status
+           const { data: business, error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
-            session_id: session_id ?? null,
+            session_id: !freeMode ? sessionId : null,
             featured: isPaid, // Set featured based on payment verification
             business_name: data.businessName,
             opportunity_name: data.opportunityName,
@@ -213,15 +275,20 @@ export default function BusinessListingWizard(): JSX.Element {
             max_profit_margin: data.profitMargin * 1.1,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          })
+          }).select().single()
+          
 
-          console.log(data)
           if (businessError) throw businessError
 
-          // Clear session storage after successful submission
+          // Update invoice with business_id if payment was successful
+          if (isPaid && sessionId) {
+            await supabase.from('invoices')
+              .update({ business_id: business.id })
+              .eq('stripe_invoice_id', sessionId)
+          }
           sessionStorage.removeItem('businessListingForm')
           sessionStorage.removeItem('step')
-         
+          setStep(1)
 
           // Show appropriate success message
           const message = wantsPremium 
@@ -235,8 +302,12 @@ export default function BusinessListingWizard(): JSX.Element {
             description: message,
           })
           
-          // router.push('/dashboard')
-        } catch (error) {
+          router.push('/dashboard')
+          setStep(1)
+       }
+          // Clear session storage after successful submission
+      
+         catch (error) {
           console.error('Error submitting form:', error)
           toast({
             title: "Error",
