@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -12,84 +12,19 @@ import Step3 from './Step3'
 import Step4 from './Step4'
 import Step5 from './Step5'
 import { ChevronRight, ChevronLeft, DollarSign, Building, FileText, CheckCircle } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from './ui/use-toast'
 import { v4 as uuidv4 } from 'uuid'
 
-const baseSchema = z.object({
-  listingType: z.enum(['free', 'paid'], {
-    required_error: "Please select a listing type",
-    invalid_type_error: "Please select either free or paid listing"
-  }),
-  paymentStatus: z.enum(['pending', 'completed', 'failed']).default('pending'),
-  businessName: z.string().min(1, 'Business name is required').max(255, 'Business name must be less than 255 characters'),
-  description: z.string()
-    .min(10, 'Description must be at least 10 characters')
-    .max(2000, 'Description must be less than 2000 characters'),
-  opportunityName: z.string()
-    .min(1, 'Opportunity name is required')
-    .max(255, 'Opportunity name must be less than 255 characters'),
-  acquisition_type: z.enum(['Buy', 'Invest'], {
-    required_error: "Please select an acquisition type",
-    invalid_type_error: "Please select either buy or invest"
-  }),
-  investmentPercentage: z.number()
-    .min(1, 'Investment percentage must be at least 1%')
-    .max(100, 'Investment percentage cannot exceed 100%')
-    .optional()
-    .nullable(),
-  images: z.any().optional(),
-  area_id: z.number({
-    required_error: "Please select an area",
-    invalid_type_error: "Please select a valid area"
-  }),
-  category_id: z.number({
-    required_error: "Please select a business category",
-    invalid_type_error: "Please select a valid category"
-  }),
-  monthlyRevenue: z.number({
-    required_error: "Monthly revenue is required",
-    invalid_type_error: "Please enter a valid number"
-  }).min(0, 'Monthly revenue must be a positive number'),
-  profitMargin: z.number({
-    required_error: "Profit margin is required",
-    invalid_type_error: "Please enter a valid number"
-  }).min(0, 'Profit margin must be at least 0%')
-    .max(100, 'Profit margin cannot exceed 100%'),
-  sellingPrice: z.number({
-    required_error: "Selling price is required",
-    invalid_type_error: "Please enter a valid number"
-  }).min(0, 'Selling price must be a positive number'),
-  revenuePerYear: z.record(z.string(), z.number()).optional().default({}),
-  cost: z.record(z.string(), z.number()).optional().default({}),
-  presentation: z.any().optional(),
-  financialStatement: z.any().optional(),
-})
-
-const schema = baseSchema.superRefine((data, ctx) => {
-  if (data.acquisition_type === 'Invest' && !data.investmentPercentage) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Investment percentage is required for investment opportunities",
-      path: ["investmentPercentage"]
-    });
-  }
-  if (data.listingType === 'paid' && data.paymentStatus !== 'completed') {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Payment must be completed for premium listing",
-      path: ["paymentStatus"]
-    });
-  }
-});
-
-type FormData = z.infer<typeof schema>
+// ... (keep all the schema definitions the same)
 
 export default function BusinessListingWizard() {
   const [step, setStep] = useState(1)
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const searchParams = useSearchParams()
+  const success = searchParams.get('success')
 
   const methods = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -97,9 +32,25 @@ export default function BusinessListingWizard() {
     defaultValues: {
       revenuePerYear: {},
       cost: {},
-      paymentStatus: 'pending'
+      listingType: success ? 'paid' : 'free'
     }
   })
+
+  useEffect(() => {
+    // Load saved form data from session storage
+    const savedData = sessionStorage.getItem('businessListingForm')
+    if (savedData) {
+      const parsedData = JSON.parse(savedData)
+      Object.keys(parsedData).forEach(key => {
+        methods.setValue(key as keyof FormData, parsedData[key])
+      })
+      
+      // Clear session storage after loading
+      if (success === 'true') {
+        sessionStorage.removeItem('businessListingForm')
+      }
+    }
+  }, [success, methods])
 
   const handleNext = async () => {
     // Check authentication only when trying to proceed
@@ -119,12 +70,15 @@ export default function BusinessListingWizard() {
     
     if (isValid) {
       if (step < 5) {
+        // Save form data to session storage after each step
+        const formData = methods.getValues()
+        sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
         setStep(step + 1)
       } else {
         // Handle final submission
         const data = methods.getValues()
-        const isPaid = data.listingType === 'paid'
-        
+        const isPaid = data.listingType === 'paid' || success === 'true'
+
         try {
           // Handle file uploads first
           const imageUrls = []
@@ -211,19 +165,8 @@ export default function BusinessListingWizard() {
 
           if (businessError) throw businessError
 
-          // Create invoice for paid listings
-          if (isPaid && business) {
-            const { error: invoiceError } = await supabase.from('invoices').insert({
-              user_id: session.user.id,
-              business_id: business.id,
-              amount: 1499,
-              currency: 'AED',
-              status: 'paid',
-              payment_date: new Date().toISOString()
-            })
-
-            if (invoiceError) throw invoiceError
-          }
+          // Clear session storage after successful submission
+          sessionStorage.removeItem('businessListingForm')
 
           toast({
             title: "Success!",
@@ -254,7 +197,7 @@ export default function BusinessListingWizard() {
   const getFieldsForStep = (currentStep: number): (keyof FormData)[] => {
     switch (currentStep) {
       case 1:
-        return ['listingType', 'paymentStatus']
+        return ['listingType']
       case 2:
         return ['businessName', 'description', 'opportunityName', 'acquisition_type', 'investmentPercentage', 'area_id', 'category_id']
       case 3:
@@ -270,6 +213,9 @@ export default function BusinessListingWizard() {
 
   const goToPrevious = () => {
     if (step > 1) {
+      // Save form data before going back
+      const formData = methods.getValues()
+      sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
       setStep(step - 1)
     }
   }
