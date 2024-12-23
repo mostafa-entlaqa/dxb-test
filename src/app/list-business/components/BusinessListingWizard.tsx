@@ -35,6 +35,7 @@ const formSchema = z.object({
   cost: z.record(z.string(), z.number()).default({}),
   presentation: z.any().optional(),
   financialStatement: z.any().optional(),
+  form_status: z.enum(['pending', 'published', 'cancelled']),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -264,6 +265,7 @@ const handleNextStep = (TheStep: number) => {
             selling_price: data.sellingPrice,
             revenue: data.revenuePerYear,
             cost: data.cost,
+            form_status: isPaid ? 'published' : 'pending',
             acquisition_type: data.acquisition_type,
             images: imageUrls,
             presentation_file: presentationUrl,
