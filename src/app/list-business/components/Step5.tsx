@@ -44,6 +44,7 @@ export default function Step5({ icon: Icon }: Step5Props) {
   useEffect(() => {
     if (success === 'true') {
       const savedData = sessionStorage.getItem('businessListingForm')
+    
       if (savedData) {
         const formData = JSON.parse(savedData)
         Object.entries(formData).forEach(([key, value]) => {
@@ -51,6 +52,7 @@ export default function Step5({ icon: Icon }: Step5Props) {
             setValue(key, value)
           }
         })
+        
       }
       setValue('listingType', 'paid')
     }

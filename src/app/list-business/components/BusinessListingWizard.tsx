@@ -6,51 +6,43 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import Step1 from './Step1'
-import Step2 from './Step2'
-import Step3 from './Step3'
-import Step4 from './Step4'
-import Step5 from './Step5'
 import { ChevronRight, ChevronLeft, DollarSign, Building, FileText, CheckCircle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from '@/components/ui/use-toast'
 import { v4 as uuidv4 } from 'uuid'
 import type { Database } from '@/types/supabase'
+import { uploadFile, uploadImages } from '@/app/actions/upload'
+import { verifyPaymentStatus } from '@/app/actions/verify-payment'
 
-const formSchema = z.object({
-  listingType: z.enum(['free', 'paid']),
-  businessName: z.string().min(1).max(255),
-  description: z.string().min(10).max(2000),
-  opportunityName: z.string().min(1).max(255),
-  acquisition_type: z.enum(['Buy', 'Invest']),
-  investmentPercentage: z.number().min(1).max(100).optional().nullable(),
-  images: z.any().optional(),
-  area_id: z.number(),
-  category_id: z.number(),
-  monthlyRevenue: z.number().min(0),
-  profitMargin: z.number().min(0).max(100),
-  sellingPrice: z.number().min(0),
-  revenuePerYear: z.record(z.string(), z.number()).default({}),
-  cost: z.record(z.string(), z.number()).default({}),
-  presentation: z.any().optional(),
-  financialStatement: z.any().optional(),
-  form_status: z.enum(['pending', 'published', 'cancelled']),
-})
+import Step1 from './Step1'
+import Step2 from './Step2'
+import Step3 from './Step3'
+import Step4 from './Step4'
+import Step5 from './Step5'
+import { formBusinessSchema } from '../schemas/businessSchema'
+import { usePaymentVerification } from '../hooks/usePaymentVerification'
 
-type FormData = z.infer<typeof formSchema>
+
+
+
+
+type FormData = z.infer<typeof formBusinessSchema>
+
+
 
 export default function BusinessListingWizard(): JSX.Element {
   const [step, setStep] = useState(sessionStorage.getItem('step') ? parseInt(sessionStorage.getItem('step') as string) : 1)
   const router = useRouter()
   const [freeMode, setFreeMode] = useState(false)
   const supabase = createClientComponentClient<Database>()
+  const { verifyPayment } = usePaymentVerification()
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
   const sessionId = searchParams.get('session_id')
 
   const methods = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formBusinessSchema),
     mode: 'onChange',
     defaultValues: {
       listingType: success ? 'paid' : 'free',
@@ -78,12 +70,8 @@ export default function BusinessListingWizard(): JSX.Element {
 
 
 
-const handleNextStep = (TheStep: number) => {
-  setStep(TheStep)
-  sessionStorage.setItem('step', TheStep.toString())
-}
 
-    // Create invoice if payment was successful
+
     const createInvoice = async () => {
       if (success && sessionId) {
         try {
@@ -127,29 +115,7 @@ const handleNextStep = (TheStep: number) => {
     createInvoice()
   }, [success, sessionId, supabase, methods])
 
-  const verifyPaymentStatus = async (userId: string): Promise<boolean> => {
-    try {
-      // Check if there's a paid invoice for this session
-      const { data: invoices, error } = await supabase
-        .from('invoices')
-        .select('*')
-        // .eq('stripe_invoice_id', sessionId)
-
-      
-      if (error) {
-        console.error('Error verifying payment:', error)
-        return false
-      }
-      console.log(invoices)
-
-      // Check if we have at least one invoice
-      return invoices && invoices.length > 0
-    } catch (error) {
-      console.error('Error verifying payment:', error)
-      return false
-    }
-  }
-
+ 
   const handleNext = async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
@@ -165,10 +131,10 @@ const handleNextStep = (TheStep: number) => {
     const fields = getFieldsForStep(step)
     const isValid = await methods.trigger(fields)
     
-const handleNextStep = (TheStep: number) => {
-  setStep(TheStep)
-  sessionStorage.setItem('step', TheStep.toString())
-}
+    const handleNextStep = (TheStep: number) => {
+      setStep(TheStep)
+      sessionStorage.setItem('step', TheStep.toString())
+    }
     
     if (isValid) {
       if (step < 5) {
@@ -182,63 +148,53 @@ const handleNextStep = (TheStep: number) => {
         const wantsPremium = data.listingType === 'paid'
 
         try {
-          // Verify payment status if user selected premium
-          const isPaid = wantsPremium ? await verifyPaymentStatus(session.user.id) : false
+          // // Early payment verification for premium listings
+          // if (wantsPremium && !sessionId) {
+          //   toast({
+          //     title: "Payment Required",
+          //     description: "Please complete the payment process before submitting a premium listing.",
+          //     variant: "destructive"
+          //   })
+          //   return
+          // }
+          const isPaid = await verifyPayment(wantsPremium, sessionId, session.user.id)
+
+          // // Verify payment status if user selected premium
+          // const isPaid = wantsPremium ? await verifyPaymentStatus(session.user.id, sessionId) : false
+          // if (wantsPremium && !isPaid) {
+          //   toast({
+          //     title: "Payment Verification Failed",
+          //     description: "Your payment could not be verified. Please try again or contact support.",
+          //     variant: "destructive"
+          //   })
+          //   return
+          // }
 
           // Handle file uploads
-          const imageUrls = []
-          if (data.images?.length) {
-            for (const file of data.images) {
-              const fileExt = file.name.split('.').pop()
-              const fileName = `${uuidv4()}.${fileExt}`
-              const { error: uploadError, data: uploadData } = await supabase.storage
-                .from('business-images')
-                .upload(fileName, file)
-
-              if (uploadError) throw uploadError
-              if (uploadData) {
-                const { data: { publicUrl } } = supabase.storage
-                  .from('business-images')
-                  .getPublicUrl(fileName)
-                imageUrls.push(publicUrl)
-              }
+          let imageUrls: string[] = []
+          if (data.images && Array.isArray(data.images)) {
+            try {
+              imageUrls = await uploadImages(data.images, 'business-images')
+              console.log('Uploaded image URLs:', imageUrls) // Debug log
+            } catch (error) {
+              console.error('Error uploading images:', error)
+              toast({
+                title: "Error",
+                description: "Failed to upload images. Please try again.",
+                variant: "destructive"
+              })
+              return
             }
           }
 
           let presentationUrl = null
           if (data.presentation?.[0]) {
-            const file = data.presentation[0]
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${uuidv4()}.${fileExt}`
-            const { error: uploadError, data: uploadData } = await supabase.storage
-                .from('presentations')
-                .upload(fileName, file)
-
-            if (uploadError) throw uploadError
-            if (uploadData) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('presentations')
-                .getPublicUrl(fileName)
-              presentationUrl = publicUrl
-            }
+            presentationUrl = await uploadFile(data.presentation[0],'presentations')
           }
 
           let financialStatementUrl = null
           if (data.financialStatement?.[0]) {
-            const file = data.financialStatement[0]
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${uuidv4()}.${fileExt}`
-            const { error: uploadError, data: uploadData } = await supabase.storage
-                .from('financial-statements')
-                .upload(fileName, file)
-
-            if (uploadError) throw uploadError
-            if (uploadData) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('financial-statements')
-                .getPublicUrl(fileName)
-              financialStatementUrl = publicUrl
-            }
+            financialStatementUrl = await uploadFile(data.financialStatement[0], 'financial-statements')
           }
            if (methods.getValues('listingType') === 'paid') {
             const { error } = await supabase.from('invoices').select('*').eq('stripe_invoice_id', sessionId).single()
@@ -309,13 +265,21 @@ const handleNextStep = (TheStep: number) => {
        }
           // Clear session storage after successful submission
       
-         catch (error) {
+         catch (error: unknown) {
           console.error('Error submitting form:', error)
-          toast({
-            title: "Error",
-            description: "Failed to submit your business listing. Please try again.",
-            variant: "destructive"
-          })
+          if ((error as any).code === '23505') {
+            toast({
+              title: "Error", 
+              description: "You have already submitted a business listing with this session ID. Please try again with a different session ID.",
+              variant: "destructive"
+            })
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to submit your business listing. Please try again.",
+              variant: "destructive"
+            })
+          }
         }
       }
     } else {

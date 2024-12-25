@@ -8,7 +8,10 @@ interface Step4Props {
 }
 
 export default function Step4({ icon: Icon }: Step4Props) {
-  const { register } = useFormContext()
+  const { register, setValue, watch } = useFormContext()
+  const images = watch('images')
+
+  console.log(images)
 
   return (
     <div className="space-y-6">
@@ -31,7 +34,8 @@ export default function Step4({ icon: Icon }: Step4Props) {
             onChange={(e) => {
               const files = e.target.files
               if (files) {
-                register('images').onChange(e)
+                const filesArray = Array.from(files)
+                setValue('images', filesArray)
               }
             }}
             className="mt-2"
