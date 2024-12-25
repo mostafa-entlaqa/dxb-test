@@ -4,12 +4,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type LucideIcon } from 'lucide-react'
+import { Category, Area } from './types'
 
 interface Step2Props {
   icon: LucideIcon
+  categories: Category[]
+  areas: Area[]
 }
 
-export default function Step2({ icon: Icon }: Step2Props) {
+export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
   const { register, watch, setValue, formState: { errors } } = useFormContext()
   const acquisition_type = watch('acquisition_type')
 
@@ -64,20 +67,16 @@ export default function Step2({ icon: Icon }: Step2Props) {
 
         <div>
           <Label htmlFor="area">Area</Label>
-          <Select onValueChange={(value) => setValue('area_id', parseInt(value), { shouldValidate: true })}>
-            <SelectTrigger className={errors.area_id ? "border-red-500" : ""}>
-              <SelectValue placeholder="Select area" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Dubai</SelectItem>
-              <SelectItem value="2">Abu Dhabi</SelectItem>
-              <SelectItem value="3">Sharjah</SelectItem>
-              <SelectItem value="4">Ajman</SelectItem>
-              <SelectItem value="5">Ras Al Khaimah</SelectItem>
-              <SelectItem value="6">Umm Al Quwain</SelectItem>
-              <SelectItem value="7">Fujairah</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={watch('area_id')} onValueChange={(value) => setValue('area_id', parseInt(value), { shouldValidate: true })}>
+              <SelectTrigger className={errors.area_id ? "border-red-500" : ""}>
+                <SelectValue placeholder="Select area" />
+              </SelectTrigger>
+              <SelectContent>
+                {areas?.map((area) => (
+                  <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           {errors.area_id && (
             <p className="text-red-500 text-sm mt-1">
               {errors.area_id.message as string}
@@ -87,23 +86,14 @@ export default function Step2({ icon: Icon }: Step2Props) {
 
         <div>
           <Label htmlFor="category">Category</Label>
-          <Select onValueChange={(value) => setValue('category_id', parseInt(value), { shouldValidate: true })}>
+          <Select value={watch('category_id')} onValueChange={(value) => setValue('category_id', parseInt(value), { shouldValidate: true })}>
             <SelectTrigger className={errors.category_id ? "border-red-500" : ""}>
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder="Select category"  />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Cafe</SelectItem>
-              <SelectItem value="2">Restaurant</SelectItem>
-              <SelectItem value="3">Retail Store</SelectItem>
-              <SelectItem value="4">E-commerce</SelectItem>
-              <SelectItem value="5">Manufacturing</SelectItem>
-              <SelectItem value="6">Healthcare</SelectItem>
-              <SelectItem value="7">Real Estate</SelectItem>
-              <SelectItem value="8">Construction</SelectItem>
-              <SelectItem value="9">Automotive</SelectItem>
-              <SelectItem value="10">Education</SelectItem>
-              <SelectItem value="11">Technology</SelectItem>
-              <SelectItem value="12">Services</SelectItem>
+              {categories?.map((category) => (
+                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {errors.category_id && (

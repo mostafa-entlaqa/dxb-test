@@ -1,17 +1,113 @@
 import { useFormContext } from 'react-hook-form'
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { type LucideIcon, Upload } from 'lucide-react'
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { uploadFile, uploadImages } from '@/app/actions/bussiness-list/upload'
+import { useState, useCallback } from 'react'
+import { toast } from '@/components/ui/use-toast'
 
 interface Step4Props {
   icon: LucideIcon
 }
 
 export default function Step4({ icon: Icon }: Step4Props) {
-  const { register, setValue, watch } = useFormContext()
-  const images = watch('images')
+  const { setValue, formState: { errors } } = useFormContext()
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [uploadingPresentation, setUploadingPresentation] = useState(false)
+  const [uploadingFinancial, setUploadingFinancial] = useState(false)
 
-  console.log(images)
+  const uploadFilesToStorage = useCallback(async (files: File[], bucket: string) => {
+    try {
+      const formData = new FormData()
+      files.forEach(file => {
+        formData.append('files', file)
+      })
+      const urls = await uploadImages(formData, bucket)
+      return urls
+    } catch (error) {
+      console.error('Error uploading files:', error)
+      throw error
+    }
+  }, [])
+
+  const uploadSingleFileToStorage = useCallback(async (file: File, bucket: string) => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const url = await uploadFile(formData, bucket)
+      return url
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      throw error
+    }
+  }, [])
+
+  const handleImageChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      try {
+        setUploadingImages(true)
+        const filesArray = Array.from(files)
+        const urls = await uploadFilesToStorage(filesArray, 'business-images')
+        setValue('images', urls, { shouldValidate: true })
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to upload images. Please try again.",
+          variant: "destructive"
+        })
+        setValue('images', [], { shouldValidate: true })
+      } finally {
+        setUploadingImages(false)
+      }
+    } else {
+      setValue('images', [], { shouldValidate: true })
+    }
+  }, [setValue, uploadFilesToStorage])
+
+  const handlePresentationChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      try {
+        setUploadingPresentation(true)
+        const url = await uploadSingleFileToStorage(files[0], 'presentations')
+        setValue('presentation', url, { shouldValidate: true })
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to upload presentation. Please try again.",
+          variant: "destructive"
+        })
+        setValue('presentation', undefined, { shouldValidate: true })
+      } finally {
+        setUploadingPresentation(false)
+      }
+    } else {
+      setValue('presentation', undefined, { shouldValidate: true })
+    }
+  }, [setValue, uploadSingleFileToStorage])
+
+  const handleFinancialStatementChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      try {
+        setUploadingFinancial(true)
+        const url = await uploadSingleFileToStorage(files[0], 'financial-statements')
+        setValue('financialStatement', url, { shouldValidate: true })
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to upload financial statement. Please try again.",
+          variant: "destructive"
+        })
+        setValue('financialStatement', undefined, { shouldValidate: true })
+      } finally {
+        setUploadingFinancial(false)
+      }
+    } else {
+      setValue('financialStatement', undefined, { shouldValidate: true })
+    }
+  }, [setValue, uploadSingleFileToStorage])
 
   return (
     <div className="space-y-6">
@@ -20,55 +116,105 @@ export default function Step4({ icon: Icon }: Step4Props) {
         <h2 className="text-2xl font-semibold">Upload Documents</h2>
       </div>
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="images" className="flex items-center space-x-2">
-            <Upload className="w-4 h-4" />
-            <span>Upload Business Images (optional)</span>
-          </Label>
-          <Input 
-            type="file" 
-            id="images" 
-            multiple 
-            accept="image/*"
-            {...register('images')}
-            onChange={(e) => {
-              const files = e.target.files
-              if (files) {
-                const filesArray = Array.from(files)
-                setValue('images', filesArray)
-              }
-            }}
-            className="mt-2"
-          />
-        </div>
+        <FormField
+          name="images"
+          render={() => (
+            <FormItem>
+              <FormLabel className="flex items-center space-x-2">
+                <Upload className="w-4 h-4" />
+                <span>Upload Business Images (optional)</span>
+              </FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input 
+                    type="file" 
+                    multiple 
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    disabled={uploadingImages}
+                    className="mt-2"
+                  />
+                  {uploadingImages && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                      <div className="text-sm text-blue-600">Uploading images...</div>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              {errors.images && (
+                <FormMessage>
+                  {errors.images.message as string}
+                </FormMessage>
+              )}
+            </FormItem>
+          )}
+        />
 
-        <div>
-          <Label htmlFor="presentation" className="flex items-center space-x-2">
-            <Upload className="w-4 h-4" />
-            <span>Upload Presentation (optional)</span>
-          </Label>
-          <Input 
-            type="file" 
-            id="presentation" 
-            accept=".pdf,.ppt,.pptx"
-            {...register('presentation')} 
-            className="mt-2" 
-          />
-        </div>
+        <FormField
+          name="presentation"
+          render={() => (
+            <FormItem>
+              <FormLabel className="flex items-center space-x-2">
+                <Upload className="w-4 h-4" />
+                <span>Upload Presentation (optional)</span>
+              </FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input 
+                    type="file" 
+                    accept=".pdf,.ppt,.pptx"
+                    onChange={handlePresentationChange}
+                    disabled={uploadingPresentation}
+                    className="mt-2" 
+                  />
+                  {uploadingPresentation && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                      <div className="text-sm text-blue-600">Uploading presentation...</div>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              {errors.presentation && (
+                <FormMessage>
+                  {errors.presentation.message as string}
+                </FormMessage>
+              )}
+            </FormItem>
+          )}
+        />
 
-        <div>
-          <Label htmlFor="financialStatement" className="flex items-center space-x-2">
-            <Upload className="w-4 h-4" />
-            <span>Upload Financial Statement (optional)</span>
-          </Label>
-          <Input 
-            type="file" 
-            id="financialStatement" 
-            accept=".pdf,.xls,.xlsx,.doc,.docx"
-            {...register('financialStatement')} 
-            className="mt-2" 
-          />
-        </div>
+        <FormField
+          name="financialStatement"
+          render={() => (
+            <FormItem>
+              <FormLabel className="flex items-center space-x-2">
+                <Upload className="w-4 h-4" />
+                <span>Upload Financial Statement (optional)</span>
+              </FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input 
+                    type="file" 
+                    accept=".pdf,.xls,.xlsx,.doc,.docx"
+                    onChange={handleFinancialStatementChange}
+                    disabled={uploadingFinancial}
+                    className="mt-2" 
+                  />
+                  {uploadingFinancial && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                      <div className="text-sm text-blue-600">Uploading financial statement...</div>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              {errors.financialStatement && (
+                <FormMessage>
+                  {errors.financialStatement.message as string}
+                </FormMessage>
+              )}
+            </FormItem>
+          )}
+        />
       </div>
     </div>
   )

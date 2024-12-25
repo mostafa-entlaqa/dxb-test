@@ -10,10 +10,8 @@ import { ChevronRight, ChevronLeft, DollarSign, Building, FileText, CheckCircle 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from '@/components/ui/use-toast'
-import { v4 as uuidv4 } from 'uuid'
 import type { Database } from '@/types/supabase'
-import { uploadFile, uploadImages } from '@/app/actions/upload'
-import { verifyPaymentStatus } from '@/app/actions/verify-payment'
+import { verifyPaymentStatus } from '@/app/actions/bussiness-list/verify-payment'
 
 import Step1 from './Step1'
 import Step2 from './Step2'
@@ -22,16 +20,21 @@ import Step4 from './Step4'
 import Step5 from './Step5'
 import { formBusinessSchema } from '../schemas/businessSchema'
 import { usePaymentVerification } from '../hooks/usePaymentVerification'
-
-
-
-
+import { Area, Category } from './types'
 
 type FormData = z.infer<typeof formBusinessSchema>
 
-
-
-export default function BusinessListingWizard(): JSX.Element {
+export default function BusinessListingWizard({
+  userId,
+  hasExistingInvoice,
+  categories,
+  areas
+}: {
+  userId: string | undefined
+  hasExistingInvoice: boolean
+  categories: Category[]
+  areas: Area[]
+}): JSX.Element {
   const [step, setStep] = useState(sessionStorage.getItem('step') ? parseInt(sessionStorage.getItem('step') as string) : 1)
   const router = useRouter()
   const [freeMode, setFreeMode] = useState(false)
@@ -47,12 +50,15 @@ export default function BusinessListingWizard(): JSX.Element {
     defaultValues: {
       listingType: success ? 'paid' : 'free',
       revenuePerYear: {},
-      cost: {}
+      cost: {},
+      images: [],
+      presentation: undefined,
+      financialStatement: undefined
     }
   })
 
   useEffect(() => {
-    // Load saved form data from session storage
+    
     const savedData = sessionStorage.getItem('businessListingForm')
     if (savedData) {
       try {
@@ -68,10 +74,6 @@ export default function BusinessListingWizard(): JSX.Element {
       }
     }
 
-
-
-
-
     const createInvoice = async () => {
       if (success && sessionId) {
         try {
@@ -82,6 +84,8 @@ export default function BusinessListingWizard(): JSX.Element {
             },
             body: JSON.stringify({ sessionId })
           })
+          
+          methods.setValue('listingType', 'paid')
 
           if (!response.ok) {
             throw new Error('Failed to verify payment')
@@ -115,7 +119,6 @@ export default function BusinessListingWizard(): JSX.Element {
     createInvoice()
   }, [success, sessionId, supabase, methods])
 
- 
   const handleNext = async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
@@ -138,80 +141,27 @@ export default function BusinessListingWizard(): JSX.Element {
     
     if (isValid) {
       if (step < 5) {
-        // Save form data to session storage
         const formData = methods.getValues()
         sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
         handleNextStep(step + 1)
       } else {
-        // Handle final submission
         const data = methods.getValues()
         const wantsPremium = data.listingType === 'paid'
 
         try {
-          // // Early payment verification for premium listings
-          // if (wantsPremium && !sessionId) {
-          //   toast({
-          //     title: "Payment Required",
-          //     description: "Please complete the payment process before submitting a premium listing.",
-          //     variant: "destructive"
-          //   })
-          //   return
-          // }
           const isPaid = await verifyPayment(wantsPremium, sessionId, session.user.id)
 
-          // // Verify payment status if user selected premium
-          // const isPaid = wantsPremium ? await verifyPaymentStatus(session.user.id, sessionId) : false
-          // if (wantsPremium && !isPaid) {
-          //   toast({
-          //     title: "Payment Verification Failed",
-          //     description: "Your payment could not be verified. Please try again or contact support.",
-          //     variant: "destructive"
-          //   })
-          //   return
-          // }
-
-          // Handle file uploads
-          let imageUrls: string[] = []
-          if (data.images && Array.isArray(data.images)) {
-            try {
-              imageUrls = await uploadImages(data.images, 'business-images')
-              console.log('Uploaded image URLs:', imageUrls) // Debug log
-            } catch (error) {
-              console.error('Error uploading images:', error)
-              toast({
-                title: "Error",
-                description: "Failed to upload images. Please try again.",
-                variant: "destructive"
-              })
-              return
-            }
-          }
-
-          let presentationUrl = null
-          if (data.presentation?.[0]) {
-            presentationUrl = await uploadFile(data.presentation[0],'presentations')
-          }
-
-          let financialStatementUrl = null
-          if (data.financialStatement?.[0]) {
-            financialStatementUrl = await uploadFile(data.financialStatement[0], 'financial-statements')
-          }
-           if (methods.getValues('listingType') === 'paid') {
+          if (methods.getValues('listingType') === 'paid') {
             const { error } = await supabase.from('invoices').select('*').eq('stripe_invoice_id', sessionId).single()
             if (error) {
               setFreeMode(true)
             }
-           }
+          }
 
-           console.log('data',data)
-           console.log('freeMode',freeMode)
-           console.log('sessionId',sessionId)
-           console.log('isPaid',isPaid)
-           // Insert business listing with verified payment status
-           const { data: business, error: businessError } = await supabase.from('businesses').insert({
+          const { data: business, error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
             session_id: !freeMode ? sessionId : null,
-            featured: isPaid, // Set featured based on payment verification
+            featured: isPaid,
             business_name: data.businessName,
             opportunity_name: data.opportunityName,
             description: data.description,
@@ -223,9 +173,9 @@ export default function BusinessListingWizard(): JSX.Element {
             cost: data.cost,
             form_status: isPaid ? 'published' : 'pending',
             acquisition_type: data.acquisition_type,
-            images: imageUrls,
-            presentation_file: presentationUrl,
-            financials_file: financialStatementUrl,
+            images: data.images || [],
+            presentation_file: data.presentation,
+            financials_file: data.financialStatement,
             category_id: data.category_id,
             min_price: data.sellingPrice * 0.9,
             max_price: data.sellingPrice * 1.1,
@@ -234,21 +184,19 @@ export default function BusinessListingWizard(): JSX.Element {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }).select().single()
-          
 
           if (businessError) throw businessError
 
-          // Update invoice with business_id if payment was successful
           if (isPaid && sessionId) {
             await supabase.from('invoices')
               .update({ business_id: business.id })
               .eq('stripe_invoice_id', sessionId)
           }
+
           sessionStorage.removeItem('businessListingForm')
           sessionStorage.removeItem('step')
           setStep(1)
 
-          // Show appropriate success message
           const message = wantsPremium 
             ? isPaid 
               ? "Your premium business listing has been submitted successfully."
@@ -262,10 +210,7 @@ export default function BusinessListingWizard(): JSX.Element {
           
           router.push('/dashboard')
           setStep(1)
-       }
-          // Clear session storage after successful submission
-      
-         catch (error: unknown) {
+        } catch (error: unknown) {
           console.error('Error submitting form:', error)
           if ((error as any).code === '23505') {
             toast({
@@ -302,7 +247,7 @@ export default function BusinessListingWizard(): JSX.Element {
       case 3:
         return ['monthlyRevenue', 'profitMargin', 'sellingPrice', 'revenuePerYear', 'cost']
       case 4:
-        return ['images', 'presentation', 'financialStatement']
+        return []
       case 5:
         return []
       default:
@@ -312,7 +257,6 @@ export default function BusinessListingWizard(): JSX.Element {
 
   const goToPrevious = () => {
     if (step > 1) {
-      // Save form data before going back
       const formData = methods.getValues()
       sessionStorage.setItem('businessListingForm', JSON.stringify(formData))
       setStep(step - 1)
@@ -324,7 +268,7 @@ export default function BusinessListingWizard(): JSX.Element {
       case 1:
         return <Step1 icon={DollarSign} />
       case 2:
-        return <Step2 icon={Building} />
+        return <Step2 icon={Building} categories={categories}  areas={areas} />
       case 3:
         return <Step3 icon={FileText} />
       case 4:

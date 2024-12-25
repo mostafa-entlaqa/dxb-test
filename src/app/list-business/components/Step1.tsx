@@ -48,7 +48,9 @@ export default function Step1({ icon: Icon }: Step1Props) {
         })
 
         if (!response.ok) {
+          setValue('listingType', 'free')
           throw new Error('Failed to create checkout session')
+          
         }
 
         const { url } = await response.json()
@@ -59,6 +61,7 @@ export default function Step1({ icon: Icon }: Step1Props) {
         }
       } catch (error) {
         console.error('Checkout error:', error)
+        setValue('listingType', 'free')
         toast({
           title: "Error",
           description: "Failed to initiate payment. Please try again.",

@@ -1,20 +1,20 @@
 'use server'
 
-import {  createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
 
 export async function uploadFile(
-  file: File,
+  formData: FormData,
   bucket: string
 ): Promise<string | null> {
   const supabase = createServerComponentClient({ cookies })
   
+  const file = formData.get('file') as File
   if (!file) return null
   
-  // Convert File to ArrayBuffer for server-side handling
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
   
   const fileExt = file.name.split('.').pop()
   const fileName = `${uuidv4()}.${fileExt}`
@@ -36,16 +36,16 @@ export async function uploadFile(
 } 
 
 export async function uploadImages(
-  files: File[],
+  formData: FormData,
   bucket: string
 ): Promise<string[]> {
   const supabase = createServerComponentClient({ cookies })
   const imageUrls: string[] = []
+  const files = formData.getAll('files') as File[]
 
   for (const file of files) {
-    // Convert File to ArrayBuffer for server-side handling
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
     
     const fileExt = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExt}`
@@ -55,8 +55,7 @@ export async function uploadImages(
       .upload(fileName, buffer)
 
     if (uploadError) throw uploadError 
-    console.log(uploadData)
-    console.log(uploadError)
+    
     if (uploadData) {
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
@@ -66,6 +65,4 @@ export async function uploadImages(
   }
 
   return imageUrls
-} 
-
-
+}

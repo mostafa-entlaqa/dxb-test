@@ -1,40 +1,48 @@
-'use client'
+import { Suspense } from 'react'
 
-import { useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import BusinessListingWizard from '@/app/list-business/components/BusinessListingWizard'
-import { toast } from '@/components/ui/use-toast'
+import BusinessListingWizard from './components/BusinessListingWizard'
+import { getServerSupabase } from '@/lib/supabase/server'
+import { getCategory } from '@/app/actions/bussiness-list/get-category'
+import { getAreas } from '@/app/actions/bussiness-list/get-areas'
 
-export default function ListBusinessPage() {
-  const searchParams = useSearchParams()
+export default async function ListBusinessPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const supabase = await getServerSupabase()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  const success = searchParams.success === 'true'
+  const canceled = searchParams.canceled === 'true'
+  const sessionId = searchParams.session_id as string | undefined
 
-  useEffect(() => {
-    const handlePaymentStatus = () => {
-      const success = searchParams.get('success')
-      const canceled = searchParams.get('canceled')
+  // Pre-fetch any necessary data here
+  const { data: categories } = await getCategory()
+  const { data: areas } = await getAreas()
 
-      if (success) {
-        toast({
-          title: "Payment Successful",
-          description: "Your premium listing has been activated. Please complete your listing details.",
-        })
-      } else if (canceled) {
-        toast({
-          title: "Payment Canceled",
-          description: "Your payment was canceled. Your listing will be created as a free listing.",
-          variant: "destructive"
-        })
-      }
-    }
-
-    handlePaymentStatus()
-  }, [searchParams])
+  console.log(categories)
+  const { data: invoice } = sessionId ? await supabase
+    .from('invoices')
+    .select('*')
+    .eq('stripe_invoice_id', sessionId)
+    .single() : { data: null }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white">
       <div className="container mx-auto py-10">
-        <h1 className="text-4xl font-bold mb-6 text-center text-blue-800">List Your Business for Sale</h1>
-        <BusinessListingWizard />
+        <h1 className="text-4xl font-bold mb-6 text-center text-blue-800">
+          List Your Business for Sale
+        </h1>
+        <Suspense fallback={<div>Loading...</div>}>
+          <BusinessListingWizard 
+          
+            userId={session?.user.id}
+            hasExistingInvoice={!!invoice}
+            categories={categories}
+            areas={areas}
+          />
+        </Suspense>
       </div>
     </div>
   )
