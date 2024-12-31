@@ -1,53 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Percent, Building2, MapPin, ArrowRight, Calendar } from 'lucide-react'
+import { DollarSign, Percent, Building2, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { 
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-
-interface Business {
-  id: number
-  opportunity_name: string
-  business_name: string
-  description: string
-  monthly_revenue: number
-  profit_margin: number
-  selling_price: number
-  acquisition_type: string
-  featured: boolean
-  images: string[]
-  revenue: any // jsonb in DB
-  cost: any // jsonb in DB
-  category_id: number
-  area_id: number
-  min_price: number
-  max_price: number
-  min_profit_margin: number
-  created_at: string
-  updated_at: string
-  business_categories: {
-    id: number
-    name: string
-    slug: string
-  }
-  areas: {
-    id: number
-    name: string
-    slug: string
-  }
-}
+import { getBusinesses } from '@/app/actions/buy/get-businesses'
+import { useEffect, useState } from 'react'
+import type { Business } from '@/app/actions/buy/get-businesses'
+import BusinessCard from './business-card'
 
 interface FilterParams {
   categoryId?: string
@@ -56,78 +19,30 @@ interface FilterParams {
   maxPrice?: string
   minProfitMargin?: string
   maxProfitMargin?: string
-  page?: number
   sortBy?: string
+  page?: number
 }
 
 interface BusinessListProps {
-  filters?: FilterParams
-  onPageChange: (page: number) => void
+  filters: FilterParams
 }
 
-const ITEMS_PER_PAGE = 25
+const ITEMS_PER_PAGE = 12
 
-export default function BusinessList({ filters, onPageChange }: BusinessListProps) {
+export default function BusinessList({ filters }: BusinessListProps) {
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClientComponentClient()
-
-  
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const fetchBusinesses = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        const from = ((filters?.page || 1) - 1) * ITEMS_PER_PAGE
-        const to = from + ITEMS_PER_PAGE - 1
-
-        let query = supabase
-          .from('businesses')
-          .select(`
-            id,
-            opportunity_name,
-            selling_price,
-            profit_margin,
-            featured,
-            created_at,
-            images,
-            business_categories (id, name, slug),
-            areas (id, name, slug)
-          `, { count: 'exact' })
-          .range(from, to)
-
-        // Apply filters
-        if (filters?.categoryId) {
-          query = query.eq('category_id', filters.categoryId)
-        }
-        if (filters?.areaId) {
-          query = query.eq('area_id', filters.areaId)
-        }
-        if (filters?.minPrice) {
-          query = query.gte('selling_price', filters.minPrice)
-        }
-        if (filters?.maxPrice) {
-          query = query.lte('selling_price', filters.maxPrice)
-        }
-        if (filters?.minProfitMargin) {
-          query = query.gte('profit_margin', filters.minProfitMargin)
-        }
-        if (filters?.maxProfitMargin) {
-          query = query.lte('profit_margin', filters.maxProfitMargin)
-        }
-
-        // Apply sorting
-        if (filters?.sortBy) {
-          const [field, direction] = filters.sortBy.split('_')
-          query = query.order(field, { ascending: direction === 'asc' })
-        }
-
-        const { data, error, count } = await query
-        if (error) throw error
-        
-        setBusinesses(data || [] as Business[])
-        setTotalCount(count || 0)
+        const data = await getBusinesses(filters)
+        setBusinesses(data.businesses)
+        setTotalCount(data.count)
       } catch (error) {
         console.error('Error fetching businesses:', error)
       } finally {
@@ -135,72 +50,79 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
       }
     }
 
-    fetchBusinesses()
-  }, [filters, supabase])
+    fetchData()
+  }, [filters])
+
+  const handlePageChange = (page: number) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString())
+    newSearchParams.set('page', page.toString())
+    router.push(`/buy?${newSearchParams.toString()}`)
+  }
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
   const currentPage = filters?.page || 1
 
-  if (isLoading) return <div>Loading...</div>
-  if (businesses.length === 0) return <div>No businesses found.</div>
-
-  return (
-    <div>
+  if (isLoading) {
+    return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {businesses.map((business) => (
-          <Card key={business.id} className={cn("flex flex-col", business.featured && "ring-2 ring-blue-500")}>
-            <div className="relative h-48">
-              <img
-                src={business.images?.[0] || '/placeholder-business.jpg'}
-                alt={business.opportunity_name}
-                className="absolute inset-0 w-full h-full object-cover rounded-t-xl"
-              />
-              {business.featured && <Badge className="absolute top-2 right-2">Featured</Badge>}
-            </div>
-            <CardHeader>
-              <CardTitle>{business.opportunity_name}</CardTitle>
-              <CardDescription>
-                <Building2 className="inline-block w-4 h-4 mr-1" />
-                {business.business_categories?.name || 'Uncategorized'}
-              </CardDescription>
-              <CardDescription>
-                <MapPin className="inline-block w-4 h-4 mr-1" />
-                {business.areas?.name || 'Location not specified'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between">
-                <div>
-                  <DollarSign className="inline-block w-4 h-4 mr-1" />
-                  {new Intl.NumberFormat('en-AE', {
-                    style: 'currency',
-                    currency: 'AED',
-                  }).format(business.selling_price)}
-                </div>
-                <div>
-                  <Percent className="inline-block w-4 h-4 mr-1" />
-                  {business.profit_margin}%
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button asChild>
-                <Link href={`/business/${business.id}`}>View Details</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
         ))}
       </div>
+    )
+  }
+
+  if (businesses.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <h3 className="text-lg font-semibold mb-2">No businesses found</h3>
+        <p className="text-gray-600 dark:text-gray-400">
+          Try adjusting your filters or search criteria
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {businesses.map((business) => (
+          <BusinessCard business={business} />
+        ))}
+      </div>
+
       {totalPages > 1 && (
-        <Pagination>
-          <PaginationPrevious onClick={() => onPageChange(currentPage - 1)} />
-          {Array.from({ length: totalPages }, (_, i) => (
-            <PaginationItem key={i}>
-              <PaginationLink onClick={() => onPageChange(i + 1)}>{i + 1}</PaginationLink>
-            </PaginationItem>
-          ))}
-          <PaginationNext onClick={() => onPageChange(currentPage + 1)} />
-        </Pagination>
+        <div className="flex justify-center items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+                className="w-8 h-8 p-0"
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       )}
     </div>
   )
