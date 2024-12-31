@@ -62,11 +62,11 @@ export default function Step5({ icon: Icon }: Step5Props) {
     return (
       <div className="space-y-4">
         <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-          <AlertTitle className="text-lg font-semibold">Ready to complete your paid listing</AlertTitle>
-          <AlertDescription>
-            Click the button below to proceed to payment and finalize your listing.
-          </AlertDescription>
-        </Alert>
+  <AlertTitle className="text-lg font-semibold">Upgrade your free listing to paid now!</AlertTitle>
+  <AlertDescription>
+    Click the button below to proceed to payment and upgrade your listing.
+  </AlertDescription>
+</Alert>
         <Button
           onClick={async () => {
             const paymentLink = await generateStripePaymentLink()
@@ -77,7 +77,7 @@ export default function Step5({ icon: Icon }: Step5Props) {
           className="w-full bg-blue-600 hover:bg-blue-700 text-white"
         >
           <CreditCard className="w-4 h-4 mr-2" />
-          Pay 1,499 AED and List My Business
+          Upgrade Now Your Free listing
         </Button>
       </div>
     )

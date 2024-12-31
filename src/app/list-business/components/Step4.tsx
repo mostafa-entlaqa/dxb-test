@@ -122,7 +122,7 @@ export default function Step4({ icon: Icon }: Step4Props) {
             <FormItem>
               <FormLabel className="flex items-center space-x-2">
                 <Upload className="w-4 h-4" />
-                <span>Upload Business Images (optional)</span>
+                <span>Upload Business Images </span>
               </FormLabel>
               <FormControl>
                 <div className="relative">

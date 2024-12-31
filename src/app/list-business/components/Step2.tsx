@@ -51,19 +51,7 @@ export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
           )}
         </div>
 
-        <div>
-          <Label htmlFor="opportunityName">Opportunity Name</Label>
-          <Input 
-            id="opportunityName" 
-            {...register('opportunityName')} 
-            className={errors.opportunityName ? "border-red-500" : ""}
-          />
-          {errors.opportunityName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.opportunityName.message as string}
-            </p>
-          )}
-        </div>
+    
 
         <div>
           <Label htmlFor="area">Area</Label>

@@ -11,7 +11,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from '@/components/ui/use-toast'
 import type { Database } from '@/types/supabase'
-import { verifyPaymentStatus } from '@/app/actions/bussiness-list/verify-payment'
 
 import Step1 from './Step1'
 import Step2 from './Step2'
@@ -157,21 +156,22 @@ export default function BusinessListingWizard({
               setFreeMode(true)
             }
           }
-
-          const { data: business, error: businessError } = await supabase.from('businesses').insert({
+          console.log(data)
+          const { data: business, error: businessError }  = await supabase.from('businesses').insert({
             user_id: session.user.id,
             session_id: !freeMode ? sessionId : null,
             featured: isPaid,
             business_name: data.businessName,
-            opportunity_name: data.opportunityName,
+            opportunity_name: data.businessName,
             description: data.description,
+            opportunity_description: data.description,
             area_id: data.area_id,
             monthly_revenue: data.monthlyRevenue,
             profit_margin: data.profitMargin,
             selling_price: data.sellingPrice,
             revenue: data.revenuePerYear,
             cost: data.cost,
-            form_status: isPaid ? 'published' : 'pending',
+            form_status: 'pending',
             acquisition_type: data.acquisition_type,
             images: data.images || [],
             presentation_file: data.presentation,
@@ -243,11 +243,11 @@ export default function BusinessListingWizard({
       case 1:
         return ['listingType']
       case 2:
-        return ['businessName', 'description', 'opportunityName', 'acquisition_type', 'investmentPercentage', 'area_id', 'category_id']
+        return ['businessName', 'description',  'acquisition_type', 'investmentPercentage', 'area_id', 'category_id']
       case 3:
         return ['monthlyRevenue', 'profitMargin', 'sellingPrice', 'revenuePerYear', 'cost']
       case 4:
-        return []
+        return ['images']
       case 5:
         return []
       default:
@@ -282,7 +282,7 @@ export default function BusinessListingWizard({
 
   return (
     <FormProvider {...methods}>
-      <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg">
+      <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg  ">
         <CardHeader className="bg-blue-600 text-white">
           <CardTitle className="text-2xl font-bold">List Your Business for Sale</CardTitle>
           <div className="flex justify-between items-center mt-4">
@@ -327,10 +327,10 @@ export default function BusinessListingWizard({
             onClick={handleNext}
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center ml-auto"
           >
-            {step === 5 ? 'Submit' : 'Next'}
+            {step === 5 ?  methods.getValues('listingType') === 'free' ? 'Submit your free listing' : 'Submit' : 'Next'}
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
-        </CardFooter>
+        </CardFooter> 
       </Card>
     </FormProvider>
   )

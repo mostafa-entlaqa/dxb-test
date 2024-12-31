@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { type LucideIcon, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 interface Step3Props {
   icon: LucideIcon
@@ -13,6 +14,9 @@ type YearlyData = Record<string, number>
 
 export default function Step3({ icon: Icon }: Step3Props) {
   const { register, setValue, watch, formState: { errors } } = useFormContext()
+  
+  const [selectedRevenueYear, setSelectedRevenueYear] = useState<string>("")
+  const [selectedCostYear, setSelectedCostYear] = useState<string>("")
   const revenuePerYear = watch('revenuePerYear') as YearlyData || {}
   const cost = watch('cost') as YearlyData || {}
 
@@ -22,12 +26,16 @@ export default function Step3({ icon: Icon }: Step3Props) {
   const addRevenueYear = (selectedYear: string) => {
     if (!revenuePerYear[selectedYear]) {
       setValue(`revenuePerYear.${selectedYear}`, 0)
+      const nextYear = availableRevenueYears.find(year => year !== selectedYear)
+      setSelectedRevenueYear(nextYear || "")
     }
   }
 
   const addCostYear = (selectedYear: string) => {
     if (!cost[selectedYear]) {
       setValue(`cost.${selectedYear}`, 0)
+      const nextYear = availableCostYears.find(year => year !== selectedYear)
+      setSelectedCostYear(nextYear || "")
     }
   }
 
@@ -104,7 +112,7 @@ export default function Step3({ icon: Icon }: Step3Props) {
           <div className="flex justify-between items-center mb-2">
             <Label>Revenue Per Year (Optional)</Label>
             {availableRevenueYears.length > 0 && (
-              <Select onValueChange={addRevenueYear}>
+              <Select onValueChange={addRevenueYear} value={selectedRevenueYear}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Add Year" />
                 </SelectTrigger>
@@ -148,7 +156,7 @@ export default function Step3({ icon: Icon }: Step3Props) {
           <div className="flex justify-between items-center mb-2">
             <Label>Annual Cost (Optional)</Label>
             {availableCostYears.length > 0 && (
-              <Select onValueChange={addCostYear}>
+              <Select onValueChange={addCostYear} value={selectedCostYear}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Add Year" />
                 </SelectTrigger>
