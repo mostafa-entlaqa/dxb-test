@@ -40,13 +40,11 @@ interface Business {
   business_categories: {
     id: number
     name: string
-    name_ar: string
     slug: string
   }
   areas: {
     id: number
     name: string
-    name_ar: string
     slug: string
   }
 }
@@ -75,31 +73,27 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClientComponentClient()
 
+  
+
   useEffect(() => {
     const fetchBusinesses = async () => {
       try {
         setIsLoading(true)
-        
-        // Calculate pagination range
         const from = ((filters?.page || 1) - 1) * ITEMS_PER_PAGE
         const to = from + ITEMS_PER_PAGE - 1
 
         let query = supabase
           .from('businesses')
           .select(`
-            *,
-            business_categories:business_categories!inner (
-              id,
-              name,
-              name_ar,
-              slug
-            ),
-            areas:areas!inner (
-              id,
-              name,
-              name_ar,
-              slug
-            )
+            id,
+            opportunity_name,
+            selling_price,
+            profit_margin,
+            featured,
+            created_at,
+            images,
+            business_categories (id, name, slug),
+            areas (id, name, slug)
           `, { count: 'exact' })
           .range(from, to)
 
@@ -130,17 +124,9 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
         }
 
         const { data, error, count } = await query
-
         if (error) throw error
-
-        // Transform the data to match the Business interface
-        const transformedData = data?.map(item => ({
-          ...item,
-          business_categories: item.business_categories[0], // Take first category
-          areas: item.areas[0], // Take first area
-        })) as Business[]
-
-        setBusinesses(transformedData || [])
+        
+        setBusinesses(data || [] as Business[])
         setTotalCount(count || 0)
       } catch (error) {
         console.error('Error fetching businesses:', error)
@@ -150,150 +136,72 @@ export default function BusinessList({ filters, onPageChange }: BusinessListProp
     }
 
     fetchBusinesses()
-  }, [supabase, filters])
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3].map((n) => (
-          <Card key={n} className="animate-pulse">
-            <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-t-xl" />
-            <CardHeader>
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
-
-  if (businesses.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <h3 className="text-xl font-semibold mb-2">No businesses found</h3>
-        <p className="text-muted-foreground">
-          Try adjusting your filters or check back later for new listings
-        </p>
-      </div>
-    )
-  }
+  }, [filters, supabase])
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
   const currentPage = filters?.page || 1
 
+  if (isLoading) return <div>Loading...</div>
+  if (businesses.length === 0) return <div>No businesses found.</div>
+
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {businesses.map((business) => (
-          <Card key={business.id} className={cn(
-            "flex flex-col",
-            business.featured && "ring-2 ring-blue-500 dark:ring-blue-400"
-          )}>
+          <Card key={business.id} className={cn("flex flex-col", business.featured && "ring-2 ring-blue-500")}>
             <div className="relative h-48">
               <img
                 src={business.images?.[0] || '/placeholder-business.jpg'}
                 alt={business.opportunity_name}
                 className="absolute inset-0 w-full h-full object-cover rounded-t-xl"
               />
-              {business.featured && (
-                <Badge className="absolute top-2 right-2">
-                  Featured
-                </Badge>
-              )}
+              {business.featured && <Badge className="absolute top-2 right-2">Featured</Badge>}
             </div>
-            
             <CardHeader>
-              <CardTitle className="text-xl">{business.opportunity_name}</CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
+              <CardTitle>{business.opportunity_name}</CardTitle>
+              <CardDescription>
+                <Building2 className="inline-block w-4 h-4 mr-1" />
                 {business.business_categories?.name || 'Uncategorized'}
               </CardDescription>
+              <CardDescription>
+                <MapPin className="inline-block w-4 h-4 mr-1" />
+                {business.areas?.name || 'Location not specified'}
+              </CardDescription>
             </CardHeader>
-            
-            <CardContent className="flex-grow">
-              <div className="grid grid-cols-2 gap-4 mb-4">
+            <CardContent>
+              <div className="flex justify-between">
                 <div>
-                  <div className="text-sm text-muted-foreground">Price</div>
-                  <div className="font-semibold flex items-center">
-                    <DollarSign className="h-4 w-4" />
-                    {new Intl.NumberFormat('en-AE', {
-                      style: 'currency',
-                      currency: 'AED',
-                      maximumFractionDigits: 0
-                    }).format(business.selling_price || 0)}
-                  </div>
+                  <DollarSign className="inline-block w-4 h-4 mr-1" />
+                  {new Intl.NumberFormat('en-AE', {
+                    style: 'currency',
+                    currency: 'AED',
+                  }).format(business.selling_price)}
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Profit Margin</div>
-                  <div className="font-semibold flex items-center">
-                    <Percent className="h-4 w-4" />
-                    {business.profit_margin || 0}%
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  {business.areas?.name || 'Location not specified'}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  Listed {new Date(business.created_at).toLocaleDateString()}
+                  <Percent className="inline-block w-4 h-4 mr-1" />
+                  {business.profit_margin}%
                 </div>
               </div>
             </CardContent>
-            
-            <CardFooter className="pt-4">
-              <Button asChild className="w-full">
-                <Link href={`/business/${business.id}`} className="flex items-center justify-center">
-                  View Details
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+            <CardFooter>
+              <Button asChild>
+                <Link href={`/business/${business.id}`}>View Details</Link>
               </Button>
             </CardFooter>
           </Card>
         ))}
       </div>
-
       {totalPages > 1 && (
-        <Pagination className="mt-8">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
-                className={cn(currentPage <= 1 && "pointer-events-none opacity-50")}
-              />
+        <Pagination>
+          <PaginationPrevious onClick={() => onPageChange(currentPage - 1)} />
+          {Array.from({ length: totalPages }, (_, i) => (
+            <PaginationItem key={i}>
+              <PaginationLink onClick={() => onPageChange(i + 1)}>{i + 1}</PaginationLink>
             </PaginationItem>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  onClick={() => onPageChange(page)}
-                  isActive={page === currentPage}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-
-            <PaginationItem>
-              <PaginationNext 
-                onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
-                className={cn(currentPage >= totalPages && "pointer-events-none opacity-50")}
-              />
-            </PaginationItem>
-          </PaginationContent>
+          ))}
+          <PaginationNext onClick={() => onPageChange(currentPage + 1)} />
         </Pagination>
       )}
     </div>
   )
 }
-
