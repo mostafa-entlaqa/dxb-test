@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { getFilterOptions, type Category, type Area } from '@/app/actions/buy/get-filter-options'
+import { getFilterOptions, type Category, type Area } from '@/app/actions/user/buy/get-filter-options'
 
 interface FilterParams {
   categoryId?: string

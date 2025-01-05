@@ -2,7 +2,7 @@ import { useFormContext } from 'react-hook-form'
 import { Input } from "@/components/ui/input"
 import { type LucideIcon, Upload } from 'lucide-react'
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { uploadFile, uploadImages } from '@/app/actions/bussiness-list/upload'
+import { uploadFile, uploadImages } from '@/app/actions/user/bussiness-list/upload'
 import { useState, useCallback } from 'react'
 import { toast } from '@/components/ui/use-toast'
 

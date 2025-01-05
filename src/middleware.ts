@@ -12,11 +12,22 @@ export async function middleware(req: NextRequest) {
 
   // Protected routes that require authentication
   const protectedRoutes = ['/dashboard', '/settings']
+  const authRoutes = ['/login', '/signup', '/forgot-password']
+  
   const isProtectedRoute = protectedRoutes.some(route => 
     req.nextUrl.pathname.startsWith(route)
   )
+  const isAuthRoute = authRoutes.some(route => 
+    req.nextUrl.pathname.startsWith(route)
+  )
 
-  // If accessing protected route without session, redirect to login
+  // Redirect to dashboard if logged in user tries to access auth routes
+  if (session && isAuthRoute) {
+    
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  // Redirect to login if accessing protected route without session
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
@@ -42,5 +53,8 @@ export const config = {
     '/dashboard/:path*',
     '/settings/:path*',
     '/complete-profile',
+    '/login',
+    '/signup',
+    '/forgot-password'
   ],
 } 

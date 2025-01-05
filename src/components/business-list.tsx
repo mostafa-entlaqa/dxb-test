@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DollarSign, Percent, Building2, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getBusinesses } from '@/app/actions/buy/get-businesses'
+import { getBusinesses } from '@/app/actions/user/buy/get-businesses'
 import { useEffect, useState } from 'react'
-import type { Business } from '@/app/actions/buy/get-businesses'
+import type { Business } from '@/app/actions/user/buy/get-businesses'
 import BusinessCard from './business-card'
 
 interface FilterParams {

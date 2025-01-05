@@ -1,5 +1,5 @@
 import { toast } from '@/components/ui/use-toast'
-import { verifyPaymentStatus } from '@/app/actions/bussiness-list/verify-payment'
+import { verifyPaymentStatus } from '@/app/actions/user/bussiness-list/verify-payment'
 
 export const usePaymentVerification = () => {
   const verifyPayment = async (
