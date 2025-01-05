@@ -2,7 +2,16 @@
 
 import { getServerSupabase } from "@/lib/supabase/server"
 
-export async function getUserRole() {
+interface UserRole {
+  role: 'admin' | 'user'
+}
+
+interface GetUserRoleResponse {
+  userRole: UserRole | null
+  error: string | null
+}
+
+export async function getUserRole(): Promise<GetUserRoleResponse> {
   try {
     const supabase = await getServerSupabase()
     const { data: { user } } = await supabase.auth.getUser()

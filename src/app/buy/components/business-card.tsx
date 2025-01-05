@@ -4,13 +4,13 @@ import { DollarSign, Percent, Building2, MapPin,  } from 'lucide-react'
 
 
 import React from 'react'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 export default function BusinessCard({business}: {business: any}) {
   return (
-    <Card key={business.id} className={cn("flex flex-col")}>
+    <Card key={business.id} className={cn("flex flex-col", business.featured && "ring-2 ring-2")}>
             <div className="relative h-48">
               <img
                 src={business.images?.[0] || '/placeholder-business.jpg'}

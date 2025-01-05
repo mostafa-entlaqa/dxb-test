@@ -1,16 +1,20 @@
 import { Suspense } from 'react'
-import BusinessList from '@/components/business-list'
-import BusinessFilters from '@/components/business-filters'
+import BusinessList from '@/app/buy/components/business-list'
+import BusinessFilters from '@/app/buy/components/business-filters'
 import { Building2, ArrowDownWideNarrow, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInsights } from '@/app/actions/user/buy/get-insights'
+import { getFilterOptions } from '@/app/actions/user/buy/get-filter-options'
 
 interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
 export default async function BuyBusinessPage({ searchParams }: PageProps) {
-  const insights = await getInsights()
+  const [insights, filterOptions] = await Promise.all([
+    getInsights(),
+    getFilterOptions()
+  ])
 
   const filters = {
     categoryId: searchParams.categoryId as string,
@@ -73,7 +77,11 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
       </div>
       <div className="flex justify-between items-center mb-8">
         
-        <BusinessFilters initialFilters={filters} />
+        <BusinessFilters 
+          initialFilters={filters} 
+          initialCategories={filterOptions.categories}
+          initialAreas={filterOptions.areas}
+        />
       </div>
 
       

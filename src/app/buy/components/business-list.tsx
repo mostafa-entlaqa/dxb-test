@@ -1,12 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Percent, Building2, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import {  ChevronLeft, ChevronRight } from 'lucide-react'
 import { getBusinesses } from '@/app/actions/user/buy/get-businesses'
 import { useEffect, useState } from 'react'
 import type { Business } from '@/app/actions/user/buy/get-businesses'

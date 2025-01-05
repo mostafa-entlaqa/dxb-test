@@ -1,11 +1,11 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { getFilterOptions, type Category, type Area } from '@/app/actions/user/buy/get-filter-options'
+import { type Category, type Area } from '@/app/actions/user/buy/get-filter-options'
 
 interface FilterParams {
   categoryId?: string
@@ -20,23 +20,19 @@ interface FilterParams {
 
 interface BusinessFiltersProps {
   initialFilters: FilterParams
+  initialCategories: Category[]
+  initialAreas: Area[]
 }
 
-export default function BusinessFilters({ initialFilters }: BusinessFiltersProps) {
+export default function BusinessFilters({ 
+  initialFilters, 
+  initialCategories, 
+  initialAreas 
+}: BusinessFiltersProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [areas, setAreas] = useState<Area[]>([])
+  const [categories] = useState<Category[]>(initialCategories)
+  const [areas] = useState<Area[]>(initialAreas)
   const [filters, setFilters] = useState<FilterParams>(initialFilters)
-
-  useEffect(() => {
-    const loadFilterOptions = async () => {
-      const options = await getFilterOptions()
-      setCategories(options.categories)
-      setAreas(options.areas)
-    }
-    loadFilterOptions()
-  }, [])
 
   const createQueryString = useCallback(
     (params: Record<string, string | undefined>) => {
@@ -53,29 +49,36 @@ export default function BusinessFilters({ initialFilters }: BusinessFiltersProps
     []
   )
 
-  const handleFilterChange = (key: string, value: string) => {
-    const newFilters = {
-      ...filters,
-      [key]: value,
-      page: 1
-    }
-    setFilters(newFilters)
-    
-    // Convert to string for URL
-    const queryParams = {
-      ...newFilters,
-      page: newFilters.page.toString()
-    }
-    
-    const queryString = createQueryString(queryParams)
-    router.push(`/buy?${queryString}`)
-  }
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [key]: value,
+        page: 1
+      }
+      
+      const queryString = createQueryString({
+        ...newFilters,
+        page: '1'
+      })
+      
+      router.push(`/buy?${queryString}`)
+      return newFilters
+    })
+  }, [router, createQueryString])
 
   const handleReset = () => {
     const defaultFilters: FilterParams = {
       page: 1,
-      sortBy: 'featured_desc'
+      sortBy: 'featured_desc',
+      categoryId: 'all_categories',  // Add default value for category
+      areaId: 'all_areas',          // Add default value for area
+      minPrice: '',                 // Reset price inputs
+      maxPrice: '',
+      minProfitMargin: '',         // Reset profit margin inputs
+      maxProfitMargin: ''
     }
+    
     setFilters(defaultFilters)
     router.push('/buy')
   }
@@ -193,7 +196,7 @@ export default function BusinessFilters({ initialFilters }: BusinessFiltersProps
             Reset
           </Button>
       </div>
-      </div>
+      </div> 
     </div>
   )
 }
