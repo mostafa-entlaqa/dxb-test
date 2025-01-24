@@ -63,8 +63,9 @@ export const generateText = async (businessName: string, location: string): Prom
 
     const chatCompletion = await client.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'gpt-4-turbo-preview',
-      response_format: { type: "json_object" }
+      model: 'gpt-3.5-turbo',
+      response_format: { type: "json_object" },
+      max_tokens: 150,
     });
 
     const response = JSON.parse(chatCompletion.choices[0].message.content || '{}');
