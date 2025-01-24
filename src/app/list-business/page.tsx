@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 
 import BusinessListingWizard from './components/BusinessListingWizard'
 import { getServerSupabase } from '@/lib/supabase/server'
-import { getCategory } from '@/app/actions/user/bussiness-list/get-category'
-import { getAreas } from '@/app/actions/user/bussiness-list/get-areas'
+import { getCategory } from '@/actions/user/bussiness-list/get-category'
+import { getAreas } from '@/actions/user/bussiness-list/get-areas'
 
 export default async function ListBusinessPage({
   searchParams,

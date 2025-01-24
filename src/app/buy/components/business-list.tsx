@@ -3,9 +3,9 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {  ChevronLeft, ChevronRight } from 'lucide-react'
-import { getBusinesses } from '@/app/actions/user/buy/get-businesses'
+import { getBusinesses } from '@/actions/user/buy/get-businesses'
 import { useEffect, useState } from 'react'
-import type { Business } from '@/app/actions/user/buy/get-businesses'
+import type { Business } from '@/actions/user/buy/get-businesses'
 import BusinessCard from './business-card'
 
 interface FilterParams {

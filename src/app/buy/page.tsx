@@ -3,8 +3,8 @@ import BusinessList from '@/app/buy/components/business-list'
 import BusinessFilters from '@/app/buy/components/business-filters'
 import { Building2, ArrowDownWideNarrow, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getInsights } from '@/app/actions/user/buy/get-insights'
-import { getFilterOptions } from '@/app/actions/user/buy/get-filter-options'
+import { getInsights } from '@/actions/user/buy/get-insights'
+import { getFilterOptions } from '@/actions/user/buy/get-filter-options'
 
 interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined }

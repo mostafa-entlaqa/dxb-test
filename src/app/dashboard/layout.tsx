@@ -1,5 +1,5 @@
 import React from 'react'
-import { getUserRole } from '../actions/get-user-role'
+import { getUserRole } from '../../actions/get-user-role'
 import { redirect } from 'next/navigation'
 
 interface DashboardLayoutProps {
