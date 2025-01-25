@@ -55,7 +55,7 @@ export default function BusinessCard({business}: {business: any}) {
             </CardContent>
             <CardFooter>
               <Button asChild className="w-full">
-                <Link href={`/business/${business.id}`}>View Details</Link>
+                <Link href={`/buy/${business.id}`}>View Details</Link>
               </Button>
             </CardFooter>
           </Card>
