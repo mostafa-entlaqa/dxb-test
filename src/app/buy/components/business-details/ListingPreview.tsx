@@ -41,7 +41,7 @@ console.log('category',category)
             <CardContent className="p-6">
               <h1 className="text-3xl font-bold mb-4 text-blue-800">{business.opportunity_name}</h1>
               <BusinessPhotoSlider photos={business.images} />
-              <p className="mt-4 text-gray-700">Opportunity Description goes here...</p>
+              <p className="mt-4 text-gray-700">{business.opportunity_description}</p>
             </CardContent>
           </Card>
 

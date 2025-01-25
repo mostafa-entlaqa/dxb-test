@@ -15,6 +15,7 @@ export interface Database {
           opportunity_name: string
           business_name: string
           description: string
+          opportunity_description: string
           monthly_revenue: number
           profit_margin: number
           selling_price: number
