@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 // Constants and configuration
 const MAX_BUSINESS_NAME_LENGTH = 50;
-const MAX_DESCRIPTION_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 3000;
 const MODEL_CONFIG = {
  modelId: 'gpt-3.5-turbo' as const,
  temperature: 0.7,
@@ -40,18 +40,24 @@ Requirements:
 2. Description:
    - Maintain core purpose but present from fresh angle
    - Maximum ${MAX_DESCRIPTION_LENGTH} characters
-   - Focus on value proposition without original details
+   - Translate business metrics into descriptive terms:
+     * Profit margins: Use terms like "high-margin", "profitable", "cost-effective"
+     * Revenue: Use "emerging", "established", "industry-leading"
+     * Team size: Use "boutique", "growing team", "enterprise-scale"
+   - Focus on value proposition without revealing specific numbers
+   - Emphasize market position and business strength
 
 3. Format:
    - Strict JSON format with 'businessName' and 'description' fields
    - No additional formatting or markdown
 
 Guidelines:
-- Complete industry relevance with different presentation
+- Use qualitative descriptions instead of numerical values
 - Professional yet creative tone
-- Avoid any trace of original context
+- Avoid any trace of original context or specific metrics
 - Ensure linguistic diversity in phrasing
-- Incorporate modern business terminology`;
+- Incorporate modern business terminology
+- Present success indicators subtly`;
 
 // Response validation schema
 const BusinessIdentitySchema = z.object({
@@ -83,9 +89,10 @@ export async function POST(req: Request) {
   });
 
   // Parse and validate AI response
-  const parsedResponse = JSON.parse(text);
+    const parsedResponse = JSON.parse(text);
+    console.log("parsedResponse =>", parsedResponse);
   const identityValidation = BusinessIdentitySchema.safeParse(parsedResponse);
-
+  console.log("identityValidation =>", identityValidation);
   if (!identityValidation.success) {
    return Response.json(
     { error: 'Invalid AI response format', details: identityValidation.error.errors },

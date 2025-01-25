@@ -21,7 +21,6 @@ export default async function ListBusinessPage({
   const { data: categories } = await getCategory()
   const { data: areas } = await getAreas()
 
-  console.log(categories)
   const { data: invoice } = sessionId ? await supabase
     .from('invoices')
     .select('*')
@@ -30,8 +29,8 @@ export default async function ListBusinessPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white">
-      <div className="container mx-auto py-10">
-        <h1 className="text-4xl font-bold mb-6 text-center text-blue-800">
+      <div className="container py-10 mx-auto">
+        <h1 className="mb-6 text-4xl font-bold text-center text-blue-800">
           List Your Business for Sale
         </h1>
         <Suspense fallback={<div>Loading...</div>}>

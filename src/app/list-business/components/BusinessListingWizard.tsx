@@ -156,15 +156,40 @@ export default function BusinessListingWizard({
               setFreeMode(true)
             }
           }
-          console.log(data)
-          const { data: business, error: businessError }  = await supabase.from('businesses').insert({
+
+          // Generate AI business identity before inserting
+          let aiGeneratedIdentity = null
+          try {
+            const response = await fetch(`/api/generate-td`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                businessName: data.businessName,
+                description: data.description,
+              }),
+            })
+
+            if (response.ok) {
+              aiGeneratedIdentity = await response.json()
+            }
+          } catch (error) {
+            console.error('Failed to generate AI business identity:', error)
+          }
+
+          console.log("aiGeneratedIdentity ===>", aiGeneratedIdentity);
+
+          const { data: business, error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
             session_id: !freeMode ? sessionId : null,
             featured: isPaid,
-            business_name: data.businessName,
+            // Original business details
+            business_name: aiGeneratedIdentity?.businessName ,
+            description: aiGeneratedIdentity?.description,
+            // AI-generated business details
             opportunity_name: data.businessName,
-            description: data.description,
-            opportunity_description: data.description,
+            opportunity_description:data.description,
             area_id: data.area_id,
             monthly_revenue: data.monthlyRevenue,
             profit_margin: data.profitMargin,
