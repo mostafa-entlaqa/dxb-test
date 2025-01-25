@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useState, useRef } from 'react'
+import { useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -33,9 +33,6 @@ export default function BusinessFilters({
   const [categories] = useState<Category[]>(initialCategories)
   const [areas] = useState<Area[]>(initialAreas)
   const [filters, setFilters] = useState<FilterParams>(initialFilters)
-
-  // Add debounce timer ref
-  const debounceTimer = useRef<NodeJS.Timeout>()
 
   const createQueryString = useCallback(
     (params: Record<string, string | undefined>) => {
@@ -69,16 +66,6 @@ export default function BusinessFilters({
       return newFilters
     })
   }, [router, createQueryString])
-
-  const handleDebouncedFilterChange = useCallback((key: string, value: string) => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
-    }
-
-    debounceTimer.current = setTimeout(() => {
-      handleFilterChange(key, value)
-    }, 500) // Wait 500ms before applying the filter
-  }, [handleFilterChange])
 
   const handleReset = () => {
     const defaultFilters: FilterParams = {
@@ -172,7 +159,7 @@ export default function BusinessFilters({
                 type="number"
                 placeholder="Min"
                 value={filters.minPrice || ''}
-                onChange={(e) => handleDebouncedFilterChange('minPrice', e.target.value)}
+                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
               />
               <Input
                 type="number"
@@ -190,7 +177,7 @@ export default function BusinessFilters({
                 type="number"
                 placeholder="Min"
                 value={filters.minProfitMargin || ''}
-                onChange={(e) => handleDebouncedFilterChange('minProfitMargin', e.target.value)}
+                onChange={(e) => handleFilterChange('minProfitMargin', e.target.value)}
               />
               <Input
                 type="number"

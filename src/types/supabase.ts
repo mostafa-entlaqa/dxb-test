@@ -23,11 +23,14 @@ export interface Database {
           images: string[]
           revenue: Json
           cost: Json
+          presentation_file: string
+          financials_file: string
           category_id: number
           area_id: number
           min_price: number
           max_price: number
           min_profit_margin: number
+          max_profit_margin: number
           created_at: string
           updated_at: string
         }
