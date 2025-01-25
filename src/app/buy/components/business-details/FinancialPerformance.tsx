@@ -23,7 +23,7 @@ export default function FinancialPerformance({ isUnlocked, revenue = {}, cost = 
 
 
   return (
-    <div className={isUnlocked ? "" : "filter blur-sm"}>
+    <div className={isUnlocked ? "" : "filter blur-sm z-10"}>
       <h2 className="text-2xl font-semibold mb-4 text-blue-800">Financial Performance</h2>
       <div className="bg-blue-50 p-4 rounded-lg mb-4">
         <ResponsiveContainer width="100%" height={300}>

@@ -20,7 +20,7 @@ export default function BusinessDetails({ isUnlocked, acquisition_type, category
             <Building className="mr-2" />
             <span className="font-semibold">Business Name:</span>
           </div>
-          <span className="ml-6 text-gray-700">Example Business</span>
+          <span className="ml-6 text-gray-700">{opportunity_name}</span>
         </div>
         <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex items-center text-blue-700">
@@ -46,7 +46,7 @@ export default function BusinessDetails({ isUnlocked, acquisition_type, category
       </div>
       <div className="mt-4 bg-blue-50 p-4 rounded-lg">
         <p className="text-gray-700">
-          <span className="font-semibold text-blue-700">Business Description:</span> {description}
+          <span className="font-semibold text-blue-700">Business Description:{description}</span> 
         </p>
       </div>
     </div>

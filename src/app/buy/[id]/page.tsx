@@ -1,31 +1,71 @@
-import { getCategoryById } from "@/actions/user/bussiness-list/get-category-by-id"
-import ListingPreview from "../components/business-details/ListingPreview"
-import { getBusinessesById } from "@/actions/user/buy/get-businesses-by-id"
-import { getAreaById } from "@/actions/user/bussiness-list/get-area-by-id"
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import ListingPreview from '../components/business-details/ListingPreview'
 
-export default async function ListingPreviewPage({ params }: { params: { id: string } }) {
+async function getBusinessData(businessId: string) {
+  const supabase = createServerComponentClient({ cookies })
+  
+  try {
+    // Get user data
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    // Get business data, category, and area
+    const [businessResponse, userCreditsResponse] = await Promise.all([
+      supabase.from('businesses').select('*').eq('id', businessId).single(),
+      user ? supabase.from('users').select('credits').eq('id', user.id).single() : null
+    ])
 
-  const business = await getBusinessesById(params.id)
-  if (!business) {
-    return <div>Business not found</div>
+    if (!businessResponse.data) {
+      return { error: 'Business not found' }
+    }
+
+    // Get category and area data
+    const [categoryResponse, areaResponse] = await Promise.all([
+      supabase.from('business_categories').select('*').eq('id', businessResponse.data.category_id).single(),
+      supabase.from('areas').select('*').eq('id', businessResponse.data.area_id).single()
+    ])
+
+    // Check if business is already unlocked for this user
+    let unlockStatus = false
+    if (user) {
+      const { data: unlockData } = await supabase
+        .from('unlocked_businesses')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('business_id', businessId)
+        .single()
+      
+      unlockStatus = !!unlockData
+    }
+
+    return {
+      business: businessResponse.data,
+      category: categoryResponse.data,
+      area: areaResponse.data,
+      isUnlocked: unlockStatus,
+      userCredits: userCreditsResponse?.data?.credits ?? 0
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+    return { error: 'Failed to load business data' }
   }
+}
 
-  const category = await getCategoryById(business.category_id)
-  if (!category) {
-    return <div>Category not found</div>
-  }
-
-  console.log('category',category)
-
-  const area = await getAreaById(business.area_id)
-  if (!area) {
-    return <div>Area not found</div>
+export default async function BusinessPage({ params }: { params: { id: string } }) {
+  const data = await getBusinessData(params.id)
+  
+  if ('error' in data) {
+    return <div>{data.error}</div>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white py-12">
-      <ListingPreview business={business} category={category.data} area={area.data} />
-    </div>
+    <ListingPreview 
+      business={data.business}
+      category={data.category}
+      area={data.area}
+      initialUnlockStatus={data.isUnlocked}
+      userCredits={data.userCredits}
+    />
   )
 }
 

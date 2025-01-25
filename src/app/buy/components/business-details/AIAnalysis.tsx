@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Business } from "../../type"
 
-export default function AIAnalysis() {
+export default function AIAnalysis({ isUnlocked, business }: { isUnlocked: boolean, business: Business }) {
   const [score, setScore] = useState(0)
 
   useEffect(() => {

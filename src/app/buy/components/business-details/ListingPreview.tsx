@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Lock, Unlock, Brain, Mail } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import BusinessPhotoSlider from "./BusinessPhotoSlider"
 import BusinessDetails from "./BusinessDetails"
 import FinancialPerformance from "./FinancialPerformance"
@@ -12,25 +13,71 @@ import FinancialsWidget from "./FinancialsWidget"
 import AIAnalysis from "./AIAnalysis"
 import { Business, Category, Area } from "../../type"
 
-export default function ListingPreview({ business,category,area }: { business: Business,category: Category,area: Area }) {
-  const [isUnlocked, setIsUnlocked] = useState(false)
-  const [userCredits, setUserCredits] = useState(5)
+interface ListingPreviewProps {
+  business: Business
+  category: Category
+  area: Area
+  initialUnlockStatus: boolean
+  userCredits: number
+}
+
+export default function ListingPreview({ 
+  business, 
+  category, 
+  area, 
+  initialUnlockStatus,
+  userCredits: initialCredits
+}: ListingPreviewProps) {
+  const [isUnlocked, setIsUnlocked] = useState(initialUnlockStatus)
+  const [userCredits, setUserCredits] = useState(initialCredits)
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
 
-console.log('category',category)
-  console.log(business)
-  const handleUnlock = () => {
-    if (userCredits > 0) {
+  const { toast } = useToast()
+
+  const handleUnlock = async () => {
+    if (isUnlocked) return // Already unlocked
+
+    try {
+      const response = await fetch('/api/credits/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId: business.id })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          toast({
+            title: "Insufficient Credits",
+            description: data.error,
+            variant: "destructive"
+          })
+        }
+        throw new Error(data.error)
+      }
+
       setIsUnlocked(true)
-      setUserCredits(userCredits - 1)
+      setUserCredits(data.remainingCredits)
+      
+      toast({
+        title: "Success",
+        description: `Business unlocked! You have ${data.remainingCredits} credits remaining.`
+      })
+    } catch (error) {
+      console.error('Error unlocking business:', error)
+      toast({
+        title: "Error",
+        description: "Failed to unlock business. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
+  
   const handleAIAnalysis = () => {
-    if (isUnlocked && userCredits >= 3) {
       setShowAIAnalysis(true)
-      setUserCredits(userCredits - 3)
-    }
+
   }
 
   return (
@@ -39,33 +86,49 @@ console.log('category',category)
         <div className="w-full lg:w-2/3">
           <Card className="bg-white shadow-lg mb-8">
             <CardContent className="p-6">
-              <h1 className="text-3xl font-bold mb-4 text-blue-800">{business.opportunity_name}</h1>
+              <h1 className="text-3xl font-bold mb-4 text-blue-800">
+                {business.opportunity_name}
+              </h1>
               <BusinessPhotoSlider photos={business.images} />
-              <p className="mt-4 text-gray-700">{business.opportunity_description}</p>
+              <p className="mt-4 text-gray-700">
+                {business.opportunity_description}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white shadow-lg mb-8">
             <CardContent className="p-6">
-              <BusinessDetails isUnlocked={isUnlocked}  acquisition_type={business.acquisition_type} category={category.name} area={area.name} description={business.description} opportunity_name={business.opportunity_name} />
+              <BusinessDetails 
+                isUnlocked={isUnlocked}
+                opportunity_name={business.opportunity_name}
+                acquisition_type={business.acquisition_type}
+                category={category.name}
+                area={area.name}
+                description={business.description}
+              />
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-lg mb-8">
+          <Card className="bg-white shadow-lg mb-8 z-50">
             <CardContent className="p-6">
               <FinancialPerformance 
-                isUnlocked={isUnlocked} 
-                revenue={business.revenue as Record<string, number>} 
-                cost={business.cost as Record<string, number>} 
+                isUnlocked={isUnlocked}
+                revenue={business.revenue as Record<string, number>}
+                cost={business.cost as Record<string, number>}
                 minProfitMargin={business.min_profit_margin}
                 maxProfitMargin={business.max_profit_margin}
               />
             </CardContent>
           </Card>
 
+
           <Card className="bg-white shadow-lg">
             <CardContent className="p-6">
-              <Documents isUnlocked={isUnlocked} presentation_file={business.presentation_file} financials_file={business.financials_file} />
+              <Documents 
+                isUnlocked={isUnlocked}
+                presentation_file={business.presentation_file}
+                financials_file={business.financials_file}
+              />
             </CardContent>
           </Card>
         </div>
@@ -73,26 +136,41 @@ console.log('category',category)
         <div className="w-full lg:w-1/3 space-y-6">
           <Card className="bg-white shadow-lg sticky top-4">
             <CardContent className="p-6">
-              <FinancialsWidget isUnlocked={isUnlocked} selling_price={business.selling_price} monthly_revenue={business.monthly_revenue} profit_margin={business.profit_margin} />
+              <FinancialsWidget 
+                isUnlocked={isUnlocked}
+                selling_price={business.selling_price}
+                monthly_revenue={business.monthly_revenue}
+                profit_margin={business.profit_margin}
+              />
 
               <div className="mt-6 space-y-4">
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={handleUnlock}
-                  disabled={isUnlocked || userCredits < 1}
-                >
-                  {isUnlocked ? <Unlock className="mr-2" /> : <Lock className="mr-2" />}
-                  {isUnlocked ? "Unlocked" : `Unlock Opportunity (${userCredits} credits)`}
-                </Button>
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleUnlock}
+                    disabled={isUnlocked || userCredits < 1}
+
+                  >
+              {isUnlocked ? <Unlock className="mr-2" /> : <Lock className="mr-2" />}
+              {isUnlocked ? "Unlocked" : `Unlock Opportunity (${userCredits} credits)`}
+                  </Button>
+                
+
+                
+
+                <Button 
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
+                  disabled={!isUnlocked}
                   onClick={handleAIAnalysis}
-                  disabled={!isUnlocked || userCredits < 3}
                 >
                   <Brain className="mr-2" />
-                  Analyze with AI (3 credits)
+                  AI Analysis
                 </Button>
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white" disabled={!isUnlocked}>
+
+                <Button 
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
+                  disabled={!isUnlocked}
+                >
                   <Mail className="mr-2" />
                   Contact Seller
                 </Button>
@@ -100,10 +178,15 @@ console.log('category',category)
             </CardContent>
           </Card>
 
+          
+         
           {showAIAnalysis && (
             <Card className="bg-white shadow-lg">
               <CardContent className="p-6">
-                <AIAnalysis />
+                <AIAnalysis 
+                  isUnlocked={isUnlocked}
+                  business={business}
+                />
               </CardContent>
             </Card>
           )}
@@ -112,4 +195,5 @@ console.log('category',category)
     </div>
   )
 }
+
 
