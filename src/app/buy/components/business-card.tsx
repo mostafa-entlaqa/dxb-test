@@ -20,7 +20,7 @@ export default function BusinessCard({business}: {business: any}) {
               {business.featured && <Badge className="absolute top-2 right-2">Featured</Badge>}
             </div>
             <CardHeader>
-              <CardTitle>{business.opportunity_name}</CardTitle>
+              <CardTitle>{business.featured ? business.opportunity_name : business.business_name}</CardTitle>
               <CardDescription>
                 <Building2 className="inline-block w-4 h-4 mr-1" />
                 {business.category?.name || 'Uncategorized'}

@@ -56,6 +56,7 @@ export default function BusinessListingWizard({
     }
   })
 
+  console.log(methods.getValues('category_id'),'categories')
   useEffect(() => {
     
     const savedData = sessionStorage.getItem('businessListingForm')
@@ -150,20 +151,37 @@ export default function BusinessListingWizard({
         try {
           const isPaid = await verifyPayment(wantsPremium, sessionId, session.user.id)
 
-          if (methods.getValues('listingType') === 'paid') {
-            const { error } = await supabase.from('invoices').select('*').eq('stripe_invoice_id', sessionId).single()
-            if (error) {
-              setFreeMode(true)
+          let finalBusinessName = data.businessName;
+          let finalDescription = data.description;
+          if (!isPaid) {
+            const selectedCategory = categories.find((cat) => cat.id === Number(methods.getValues('category_id')))
+            console.log(selectedCategory,'selectedCategory')
+            const aiContent = await fetch('/api/generate-business-content', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                businessName: data.businessName,
+                sellingPrice: data.sellingPrice,
+                profitMargin: data.profitMargin,
+                category: selectedCategory?.name
+              })
+            }).then(res => res.json());
+
+            if (aiContent && !aiContent.error) {
+              finalBusinessName = aiContent.businessName;
+              finalDescription = aiContent.description;
             }
           }
-          console.log(data)
-          const { data: business, error: businessError }  = await supabase.from('businesses').insert({
+
+          const { data: business, error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
             session_id: !freeMode ? sessionId : null,
             featured: isPaid,
-            business_name: data.businessName,
+            business_name: finalBusinessName,
             opportunity_name: data.businessName,
-            description: data.description,
+            description: finalDescription,
             opportunity_description: data.description,
             area_id: data.area_id,
             monthly_revenue: data.monthlyRevenue,

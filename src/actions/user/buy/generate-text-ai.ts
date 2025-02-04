@@ -48,39 +48,39 @@ interface RawBusiness {
   areas: Area[];
 }
 
-export const generateText = async (businessName: string, location: string): Promise<GenerateTextResponse> => {
-  try {
-    const prompt = `Generate a creative and professional business name and description for the following business:
-    Original Business Name: ${businessName}
-    Location: ${location}
+// export const generateText = async (businessName: string, location: string): Promise<GenerateTextResponse> => {
+//   try {
+//     const prompt = `Generate a creative and professional business name and description for the following business:
+//     Original Business Name: ${businessName}
+//     Location: ${location}
     
-    Requirements:
-    1. Business Name: Create a catchy, market-ready name (max 50 characters)
-    2. Description: Write a compelling business description (max 200 characters)
-    3. Format the response as JSON with 'businessName' and 'description' fields
+//     Requirements:
+//     1. Business Name: Create a catchy, market-ready name (max 50 characters)
+//     2. Description: Write a compelling business description (max 200 characters)
+//     3. Format the response as JSON with 'businessName' and 'description' fields
     
-    Keep the tone professional and focus on business value.`;
+//     Keep the tone professional and focus on business value.`;
 
-    const chatCompletion = await client.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'gpt-3.5-turbo',
-      response_format: { type: "json_object" },
-      max_tokens: 150,
-    });
+//     const chatCompletion = await client.chat.completions.create({
+//       messages: [{ role: 'user', content: prompt }],
+//       model: 'gpt-3.5-turbo',
+//       response_format: { type: "json_object" },
+//       max_tokens: 150,
+//     });
 
-    const response = JSON.parse(chatCompletion.choices[0].message.content || '{}');
+//     const response = JSON.parse(chatCompletion.choices[0].message.content || '{}');
     
-    return {
-      businessName: response.businessName,
-      description: response.description
-    };
-  } catch (error) {
-    console.error('Error generating text:', error);
-    return {
-      error: 'Failed to generate business text'
-    };
-  }
-}
+//     return {
+//       businessName: response.businessName,
+//       description: response.description
+//     };
+//   } catch (error) {
+//     console.error('Error generating text:', error);
+//     return {
+//       error: 'Failed to generate business text'
+//     };
+//   }
+// }
 
 interface FilterParams {
   categoryId?: string;
@@ -167,14 +167,13 @@ export const getBusinessData = async (filters: FilterParams): Promise<BusinessRe
     // Generate AI content for non-featured businesses
     const enhancedData = await Promise.all(transformedData.map(async (business) => {
       if (!business.featured) {
-        const aiContent = await generateText(
-          business.business_name,
-          business.areas.name || 'Dubai'
-        );
+        // const aiContent = await generateText(
+        //   business.business_name,
+        //   business.areas.name || 'Dubai'
+        // );
         return {
           ...business,
-          opportunity_name: aiContent.businessName || business.business_name,
-          description: aiContent.description || business.description
+          
         };
       }
       return business;

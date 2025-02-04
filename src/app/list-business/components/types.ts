@@ -1,5 +1,5 @@
 export interface Category {
-  id: string
+  id: number
   name: string
   name_ar: string
   slug: string
