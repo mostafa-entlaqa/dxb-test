@@ -29,6 +29,7 @@ import { Icons } from '@/components/icons'
 import { User, UserCircle, ShieldCheck, Check, EyeIcon, EyeOffIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
+import { initCredits } from '@/actions/init-credits'
 
 type PasswordStrengthLevel = {
   label: string;
@@ -87,7 +88,7 @@ export default function SignUpPage() {
 
   const calculatePasswordStrength = (password: string): number => {
     if (!password) return 0
-    
+
     let score = 0
     const checks = {
       length: password.length >= 8,
@@ -126,10 +127,20 @@ export default function SignUpPage() {
         }
       })
 
+      console.log('authData', authData)
+
+
+      await initCredits(authData?.user?.id)
+
+
+
       if (authError) throw authError
+
 
       if (authData.user) {
         // Create initial profile
+
+
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -139,6 +150,8 @@ export default function SignUpPage() {
             profile_completed: false
           })
           .single()
+
+
 
         if (profileError && profileError.code !== '23505') { // Ignore unique violation
           throw profileError
@@ -169,7 +182,7 @@ export default function SignUpPage() {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
           <p className="text-gray-600 dark:text-gray-300 mt-1">Enter your email and create a strong password</p>
         </div>
-        
+
         <Form {...accountForm}>
           <form onSubmit={accountForm.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
@@ -185,7 +198,7 @@ export default function SignUpPage() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={accountForm.control}
               name="password"
@@ -194,8 +207,8 @@ export default function SignUpPage() {
                   <FormLabel>Password</FormLabel>
                   <div className="relative">
                     <FormControl>
-                      <Input 
-                        {...field} 
+                      <Input
+                        {...field}
                         type={showPassword ? "text" : "password"}
                         onChange={(e) => {
                           field.onChange(e)
@@ -218,8 +231,8 @@ export default function SignUpPage() {
                     </Button>
                   </div>
                   <div className="mt-2 space-y-2">
-                    <Progress 
-                      value={((passwordStrength + 1) / 5) * 100} 
+                    <Progress
+                      value={((passwordStrength + 1) / 5) * 100}
                       className={cn(
                         "h-2",
                         passwordStrength === 0 && "bg-red-100 dark:bg-red-900",
@@ -273,9 +286,9 @@ export default function SignUpPage() {
                   <FormLabel>Confirm Password</FormLabel>
                   <div className="relative">
                     <FormControl>
-                      <Input 
-                        {...field} 
-                        type={showConfirmPassword ? "text" : "password"} 
+                      <Input
+                        {...field}
+                        type={showConfirmPassword ? "text" : "password"}
                       />
                     </FormControl>
                     <Button

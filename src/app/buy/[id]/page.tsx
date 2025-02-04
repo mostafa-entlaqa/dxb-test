@@ -4,15 +4,15 @@ import ListingPreview from '../components/business-details/ListingPreview'
 
 async function getBusinessData(businessId: string) {
   const supabase = createServerComponentClient({ cookies })
-  
+
   try {
     // Get user data
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     // Get business data, category, and area
     const [businessResponse, userCreditsResponse] = await Promise.all([
       supabase.from('businesses').select('*').eq('id', businessId).single(),
-      user ? supabase.from('users').select('credits').eq('id', user.id).single() : null
+      user ? supabase.from('users_credits').select('credits').eq('user_id', user.id).single() : null
     ])
 
     if (!businessResponse.data) {
@@ -34,7 +34,7 @@ async function getBusinessData(businessId: string) {
         .eq('user_id', user.id)
         .eq('business_id', businessId)
         .single()
-      
+
       unlockStatus = !!unlockData
     }
 
@@ -53,13 +53,13 @@ async function getBusinessData(businessId: string) {
 
 export default async function BusinessPage({ params }: { params: { id: string } }) {
   const data = await getBusinessData(params.id)
-  
+
   if ('error' in data) {
     return <div>{data.error}</div>
   }
 
   return (
-    <ListingPreview 
+    <ListingPreview
       business={data.business}
       category={data.category}
       area={data.area}

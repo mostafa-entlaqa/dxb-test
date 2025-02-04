@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -24,20 +24,29 @@ interface BusinessFiltersProps {
   initialAreas: Area[]
 }
 
-export default function BusinessFilters({ 
-  initialFilters, 
-  initialCategories, 
-  initialAreas 
+export default function BusinessFilters({
+  initialFilters,
+  initialCategories,
+  initialAreas
 }: BusinessFiltersProps) {
+
+
+
   const router = useRouter()
   const [categories] = useState<Category[]>(initialCategories)
   const [areas] = useState<Area[]>(initialAreas)
   const [filters, setFilters] = useState<FilterParams>(initialFilters)
 
+
+  const [localMinPrice, setLocalMinPrice] = useState(initialFilters.minPrice || '')
+  const [localMaxPrice, setLocalMaxPrice] = useState(initialFilters.maxPrice || '')
+  const [localMinProfit, setLocalMinProfit] = useState(initialFilters.minProfitMargin || '')
+  const [localMaxProfit, setLocalMaxProfit] = useState(initialFilters.maxProfitMargin || '')
+
   const createQueryString = useCallback(
     (params: Record<string, string | undefined>) => {
       const newSearchParams = new URLSearchParams()
-      
+
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
           newSearchParams.set(key, value)
@@ -56,12 +65,12 @@ export default function BusinessFilters({
         [key]: value,
         page: 1
       }
-      
+
       const queryString = createQueryString({
         ...newFilters,
         page: '1'
       })
-      
+
       router.push(`/buy?${queryString}`)
       return newFilters
     })
@@ -78,40 +87,82 @@ export default function BusinessFilters({
       minProfitMargin: '',         // Reset profit margin inputs
       maxProfitMargin: ''
     }
-    
+
     setFilters(defaultFilters)
     router.push('/buy')
   }
 
+
+  // Add local state for debounced inputs
+
+
+  // Sync local state with initialFilters changes
+  useEffect(() => {
+    setLocalMinPrice(initialFilters.minPrice || '')
+    setLocalMaxPrice(initialFilters.maxPrice || '')
+    setLocalMinProfit(initialFilters.minProfitMargin || '')
+    setLocalMaxProfit(initialFilters.maxProfitMargin || '')
+  }, [initialFilters])
+
+  // Create debounce effect for price inputs
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      handleFilterChange('minPrice', localMinPrice)
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [localMinPrice])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      handleFilterChange('maxPrice', localMaxPrice)
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [localMaxPrice])
+
+  // Create debounce effect for profit margin inputs
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      handleFilterChange('minProfitMargin', localMinProfit)
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [localMinProfit])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      handleFilterChange('maxProfitMargin', localMaxProfit)
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [localMaxProfit])
+
   return (
     <div className="space-y-6">
-      
+
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-semibold">Filters</h2>
-         
+
           <div className="flex justify-between items-center">
-        <Select
-          value={filters.sortBy || 'featured_desc'}
-          onValueChange={(value) => handleFilterChange('sortBy', value)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="featured_desc">Sort by Featured</SelectItem>
-            <SelectItem value="price_asc">Price: Low to High</SelectItem>
-            <SelectItem value="price_desc">Price: High to Low</SelectItem>
-            <SelectItem value="profit_asc">Profit: Low to High</SelectItem>
-            <SelectItem value="profit_desc">Profit: High to Low</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+            <Select
+              value={filters.sortBy || 'featured_desc'}
+              onValueChange={(value) => handleFilterChange('sortBy', value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="featured_desc">Sort by Featured</SelectItem>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                <SelectItem value="profit_asc">Profit: Low to High</SelectItem>
+                <SelectItem value="profit_desc">Profit: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          
+
           <div>
             <label className="text-sm font-medium mb-2 block">Category</label>
             <Select
@@ -158,17 +209,18 @@ export default function BusinessFilters({
               <Input
                 type="number"
                 placeholder="Min"
-                value={filters.minPrice || ''}
-                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                value={localMinPrice}
+                onChange={(e) => setLocalMinPrice(e.target.value)}
               />
               <Input
                 type="number"
                 placeholder="Max"
-                value={filters.maxPrice || ''}
-                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                value={localMaxPrice}
+                onChange={(e) => setLocalMaxPrice(e.target.value)}
               />
             </div>
           </div>
+
 
           <div>
             <label className="text-sm font-medium mb-2 block">Profit Margin (%)</label>
@@ -176,27 +228,25 @@ export default function BusinessFilters({
               <Input
                 type="number"
                 placeholder="Min"
-                value={filters.minProfitMargin || ''}
-                onChange={(e) => handleFilterChange('minProfitMargin', e.target.value)}
+                value={localMinProfit}
+                onChange={(e) => setLocalMinProfit(e.target.value)}
               />
               <Input
                 type="number"
                 placeholder="Max"
-                value={filters.maxProfitMargin || ''}
-                onChange={(e) => handleFilterChange('maxProfitMargin', e.target.value)}
+                value={localMaxProfit}
+                onChange={(e) => setLocalMaxProfit(e.target.value)}
               />
             </div>
-
-          
           </div>
-        
+
         </div>
-      <div className='w-full mt-4 justify-end flex'>
-      <Button variant="outline" onClick={handleReset}>
+        <div className='w-full mt-4 justify-end flex'>
+          <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>
+        </div>
       </div>
-      </div> 
     </div>
   )
 }
