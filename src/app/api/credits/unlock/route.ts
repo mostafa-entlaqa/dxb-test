@@ -7,7 +7,7 @@ const UNLOCK_COST = 1 // Credits needed to unlock a business
 export async function POST(request: Request) {
   const { businessId } = await request.json()
   const supabase = createRouteHandlerClient({ cookies })
-  
+
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -16,10 +16,11 @@ export async function POST(request: Request) {
 
     // Get user credits from users table
     const { data: userData, error: userError } = await supabase
-      .from('users')
+      .from('users_credits')
       .select('credits')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single()
+
 
     if (userError) {
       console.error('User error:', userError)
@@ -29,18 +30,18 @@ export async function POST(request: Request) {
     const currentCredits = userData?.credits || 0
 
     if (currentCredits < UNLOCK_COST) {
-      return NextResponse.json({ 
-        error: 'Insufficient credits', 
+      return NextResponse.json({
+        error: 'Insufficient credits',
         creditsNeeded: UNLOCK_COST,
-        currentCredits: currentCredits 
+        currentCredits: currentCredits
       }, { status: 400 })
     }
 
     // Update user credits in users table
-    const { error: creditUpdateError } = await supabase
-      .from('users')
+    const { error: creditUpdateError, data } = await supabase
+      .from('users_credits')
       .update({ credits: currentCredits - UNLOCK_COST })
-      .eq('id', user.id)
+      .eq('user_id', user.id)
 
     if (creditUpdateError) {
       console.error('Credit update error:', creditUpdateError)
@@ -59,16 +60,16 @@ export async function POST(request: Request) {
       console.error('Unlock error:', unlockError)
       // Rollback credits if unlock fails
       await supabase
-        .from('users')
+        .from('users_credits')
         .update({ credits: currentCredits })
-        .eq('id', user.id)
-      
+        .eq('user_id', user.id)
+
       return NextResponse.json({ error: 'Failed to record unlock' }, { status: 500 })
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      remainingCredits: currentCredits - UNLOCK_COST 
+      remainingCredits: currentCredits - UNLOCK_COST
     })
   } catch (error) {
     console.error('Unexpected error:', error)

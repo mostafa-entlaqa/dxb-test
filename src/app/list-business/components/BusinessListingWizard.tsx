@@ -300,10 +300,10 @@ export default function BusinessListingWizard({
 
   return (
     <FormProvider {...methods}>
-      <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg  ">
-        <CardHeader className="bg-blue-600 text-white">
+      <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg ">
+        <CardHeader className="text-white bg-blue-600">
           <CardTitle className="text-2xl font-bold">List Your Business for Sale</CardTitle>
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center justify-between mt-4">
             {[1, 2, 3, 4, 5].map((stepNumber) => (
               <div
                 key={stepNumber}
@@ -343,7 +343,7 @@ export default function BusinessListingWizard({
           <Button
             type="button"
             onClick={handleNext}
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center ml-auto"
+            className="flex items-center ml-auto text-white bg-blue-600 hover:bg-blue-700"
           >
             {step === 5 ?  methods.getValues('listingType') === 'free' ? 'Submit your free listing' : 'Submit' : 'Next'}
             <ChevronRight className="w-4 h-4 ml-2" />

@@ -4,15 +4,15 @@ import ListingPreview from '../components/business-details/ListingPreview'
 
 async function getBusinessData(businessId: string) {
   const supabase = createServerComponentClient({ cookies })
-  
+
   try {
     // Get user data
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     // Get business data, category, and area
     const [businessResponse, userCreditsResponse] = await Promise.all([
       supabase.from('businesses').select('*').eq('id', businessId).single(),
-      user ? supabase.from('users').select('credits').eq('id', user.id).single() : null
+      user ? supabase.from('users_credits').select('credits').eq('user_id', user.id).single() : null
     ])
 
     if (!businessResponse.data) {
@@ -34,8 +34,24 @@ async function getBusinessData(businessId: string) {
         .eq('user_id', user.id)
         .eq('business_id', businessId)
         .single()
-      
+
       unlockStatus = !!unlockData
+    }
+    let unlockStatusAi = false
+    let aiData = null
+    if (user) {
+      const { data: unlockDataAi } = await supabase
+        .from('ai_analysis')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('business_id', businessId)
+        .single()
+      console.log('unlockDataAi', unlockDataAi)
+     
+      unlockStatusAi = !!unlockDataAi
+      aiData = unlockDataAi
+      console.log('aiData', aiData)
+      console.log('unlockStatusAi', unlockStatusAi)
     }
 
     return {
@@ -43,6 +59,8 @@ async function getBusinessData(businessId: string) {
       category: categoryResponse.data,
       area: areaResponse.data,
       isUnlocked: unlockStatus,
+      isUnlockedAi: unlockStatusAi,
+      aiData: aiData,
       userCredits: userCreditsResponse?.data?.credits ?? 0
     }
   } catch (error) {
@@ -53,16 +71,29 @@ async function getBusinessData(businessId: string) {
 
 export default async function BusinessPage({ params }: { params: { id: string } }) {
   const data = await getBusinessData(params.id)
-  
+
   if ('error' in data) {
     return <div>{data.error}</div>
   }
 
+  // Create aiDataResponse only if aiData exists
+  const aiDataResponse = data.aiData ? {
+    strength: data.aiData.score,
+    deepAnalysis: typeof data.aiData.ai_response === 'string' 
+      ? JSON.parse(data.aiData.ai_response)
+      : data.aiData.ai_response
+  } : null
+
+  console.log('Raw AI Response:', data.aiData?.ai_response) // Debug log
+  console.log('Processed AI Response:', aiDataResponse) // Debug log
+
   return (
-    <ListingPreview 
+    <ListingPreview
       business={data.business}
       category={data.category}
       area={data.area}
+      aiDataResponse={aiDataResponse}
+      initialUnlockStatusAi={data.isUnlockedAi}
       initialUnlockStatus={data.isUnlocked}
       userCredits={data.userCredits}
     />
