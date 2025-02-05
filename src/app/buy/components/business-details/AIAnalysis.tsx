@@ -8,14 +8,17 @@ interface AIAnalysisProps {
   aiData: {
     strength: number
     deepAnalysis: {
-      'Business overview': string
-      'Deal assessment': string
-      'Financial analysis': string
-      'Market overview': string
-      'Standard AI disclaimer': string
+      business_overview: string
+      deal_assessment: string
+      financial_analysis: string
+      market_overview: string
+      standard_ai_disclaimer: string
     }
+
   }
 }
+
+
 
 export default function AIAnalysis({ isUnlocked, aiData }: AIAnalysisProps) {
   const getColor = (score: number) => {
@@ -34,9 +37,12 @@ export default function AIAnalysis({ isUnlocked, aiData }: AIAnalysisProps) {
 
   const analysis = aiData.deepAnalysis
 
+  console.log('analysis', analysis)
+
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-4 text-blue-800">AI Analysis</h2>
+
       <div className="flex items-center justify-center mb-6">
         <div className="relative w-48 h-48">
           <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -69,27 +75,27 @@ export default function AIAnalysis({ isUnlocked, aiData }: AIAnalysisProps) {
         <div className="text-gray-700">
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-2">Business Overview</h3>
-            <p>{analysis['Business overview']}</p>
+            <p>{analysis.business_overview}</p>
           </div>
 
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-2">Deal Assessment</h3>
-            <p>{analysis['Deal assessment']}</p>
+            <p>{analysis.deal_assessment}</p>
           </div>
 
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-2">Financial Analysis</h3>
-            <p>{analysis['Financial analysis']}</p>
+            <p>{analysis.financial_analysis}</p>
           </div>
 
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-2">Market Overview</h3>
-            <p>{analysis['Market overview']}</p>
+            <p>{analysis.market_overview}</p>
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600 italic">
-              {analysis['Standard AI disclaimer']}
+              {analysis.standard_ai_disclaimer}
             </p>
           </div>
         </div>

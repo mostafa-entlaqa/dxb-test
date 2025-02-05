@@ -12,7 +12,7 @@ async function getBusinessData(businessId: string) {
     // Get business data, category, and area
     const [businessResponse, userCreditsResponse] = await Promise.all([
       supabase.from('businesses').select('*').eq('id', businessId).single(),
-      user ? supabase.from('users_credits').select('credits').eq('user_id', user.id).single() : null
+      user ? supabase.from('users_credits').select('credits, ai_credits').eq('user_id', user.id).single() : null
     ])
 
     if (!businessResponse.data) {
@@ -47,7 +47,7 @@ async function getBusinessData(businessId: string) {
         .eq('business_id', businessId)
         .single()
       console.log('unlockDataAi', unlockDataAi)
-     
+
       unlockStatusAi = !!unlockDataAi
       aiData = unlockDataAi
       console.log('aiData', aiData)
@@ -61,12 +61,14 @@ async function getBusinessData(businessId: string) {
       isUnlocked: unlockStatus,
       isUnlockedAi: unlockStatusAi,
       aiData: aiData,
-      userCredits: userCreditsResponse?.data?.credits ?? 0
+      userCredits: userCreditsResponse?.data?.credits ?? 0,
+      aiUserCredits: userCreditsResponse?.data?.ai_credits ?? 0
     }
   } catch (error) {
     console.error('Error fetching data:', error)
     return { error: 'Failed to load business data' }
   }
+
 }
 
 export default async function BusinessPage({ params }: { params: { id: string } }) {
@@ -79,13 +81,16 @@ export default async function BusinessPage({ params }: { params: { id: string } 
   // Create aiDataResponse only if aiData exists
   const aiDataResponse = data.aiData ? {
     strength: data.aiData.score,
-    deepAnalysis: typeof data.aiData.ai_response === 'string' 
+    deepAnalysis: typeof data.aiData.ai_response === 'string'
       ? JSON.parse(data.aiData.ai_response)
       : data.aiData.ai_response
   } : null
 
+  console.log('data.aiUserCredits', data.aiUserCredits)
+
   console.log('Raw AI Response:', data.aiData?.ai_response) // Debug log
   console.log('Processed AI Response:', aiDataResponse) // Debug log
+
 
   return (
     <ListingPreview
@@ -96,7 +101,9 @@ export default async function BusinessPage({ params }: { params: { id: string } 
       initialUnlockStatusAi={data.isUnlockedAi}
       initialUnlockStatus={data.isUnlocked}
       userCredits={data.userCredits}
+      aiUserCredits={data.aiUserCredits}
     />
   )
 }
+
 

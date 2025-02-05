@@ -19,17 +19,18 @@ interface ListingPreviewProps {
   area: Area
   initialUnlockStatus: boolean
   initialUnlockStatusAi: boolean
-  userCredits: number
   aiDataResponse: {
-    strength: number;
+    strength: number
     deepAnalysis: {
-      'Business overview': string;
-      'Deal assessment': string;
-      'Financial analysis': string;
-      'Market overview': string;
-      'Standard AI disclaimer': string;
-    };
+      business_overview: string
+      deal_assessment: string
+      financial_analysis: string
+      market_overview: string
+      standard_ai_disclaimer: string
+    }
   } | null
+  userCredits: number
+  aiUserCredits: number
 }
 
 export default function ListingPreview({
@@ -38,16 +39,23 @@ export default function ListingPreview({
   area,
   initialUnlockStatus,
   initialUnlockStatusAi,
+  aiDataResponse,
   userCredits: initialCredits,
-  aiDataResponse
+  aiUserCredits: initialAiCredits
 }: ListingPreviewProps) {
   const [isUnlocked, setIsUnlocked] = useState(initialUnlockStatus)
+  const [isUnlockedAi, setIsUnlockedAi] = useState(initialUnlockStatusAi)
   const [userCredits, setUserCredits] = useState(initialCredits)
+  // const [aiCredits, setAiCredits] = useState(initialAiCredits)
   const [showAIAnalysis, setShowAIAnalysis] = useState(!!aiDataResponse)
   const [aiData, setAiData] = useState(aiDataResponse)
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+
+  console.log('initialAiCredits', initialAiCredits)
+
+
 
   const { toast } = useToast()
+
 
   const handleUnlock = async () => {
     if (isUnlocked) return // Already unlocked
@@ -90,14 +98,23 @@ export default function ListingPreview({
   }
 
   const handleAIAnalysis = async () => {
-    try {
-      if (aiDataResponse) {
-        setAiData(aiDataResponse)
-        setShowAIAnalysis(true)
-        return
-      }
+    if (!isUnlocked) return
 
-      setIsGeneratingAI(true)
+    if (isUnlockedAi && aiData) {
+      setShowAIAnalysis(true)
+      return
+    }
+
+    if (initialAiCredits < 1) {
+      toast({
+        title: "Insufficient AI Credits",
+        description: "You need 1 AI credit to generate analysis",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
       const response = await fetch('/api/generate-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,15 +127,40 @@ export default function ListingPreview({
           sellingPrice: business.selling_price,
           sellingType: business.acquisition_type,
           monthlyRevenue: business.monthly_revenue,
-          revenuePerYear: business.revenue as Record<string, number>['revenuePerYear'],
-          costPerYear: business.cost as Record<string, number>['costPerYear'],
+          revenuePerYear: business.revenue,
+          costPerYear: business.cost,
           profitMargin: business.profit_margin
         })
       })
-      
-      const analysis = await response.json()
-      setAiData(analysis)
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          toast({
+            title: "Insufficient Credits",
+            description: data.error,
+            variant: "destructive"
+          })
+        }
+        throw new Error(data.error)
+      }
+
+      setAiData({
+        strength: data.strength,
+        deepAnalysis: typeof data.deepAnalysis === 'string'
+          ? JSON.parse(data.deepAnalysis)
+          : data.deepAnalysis
+      })
+      setUserCredits(data.remainingCredits)
+      // setAiCredits(data.remainingCredits)
+      setIsUnlockedAi(true)
       setShowAIAnalysis(true)
+
+      toast({
+        title: "Success",
+        description: `AI Analysis generated! You have ${data.remainingCredits} credits remaining.`
+      })
     } catch (error) {
       console.error('Error generating AI analysis:', error)
       toast({
@@ -126,8 +168,6 @@ export default function ListingPreview({
         description: "Failed to generate AI analysis. Please try again later.",
         variant: "destructive"
       })
-    } finally {
-      setIsGeneratingAI(false)
     }
   }
 
@@ -172,6 +212,7 @@ export default function ListingPreview({
             </CardContent>
           </Card>
 
+
           <Card className="bg-white shadow-lg">
             <CardContent className="p-6">
               <Documents
@@ -194,24 +235,27 @@ export default function ListingPreview({
               />
 
               <div className="mt-6 space-y-4">
+
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleUnlock}
                   disabled={isUnlocked || userCredits < 1}
+
                 >
                   {isUnlocked ? <Unlock className="mr-2" /> : <Lock className="mr-2" />}
                   {isUnlocked ? "Unlocked" : `Unlock Opportunity (${userCredits} credits)`}
                 </Button>
 
+
+
+
                 <Button
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                  disabled={!isUnlocked || !!aiData || isGeneratingAI}
+                  disabled={!isUnlocked}
                   onClick={handleAIAnalysis}
                 >
                   <Brain className="mr-2" />
-                  {aiData ? "AI Analysis Available" : 
-                   isGeneratingAI ? "Generating Analysis..." : 
-                   "Generate AI Analysis"}
+                  {isUnlockedAi ? "View AI Analysis" : `Generate AI Analysis (${initialAiCredits} AI credits)`}
                 </Button>
 
                 <Button
@@ -225,15 +269,20 @@ export default function ListingPreview({
             </CardContent>
           </Card>
 
-          {(showAIAnalysis && aiData) && (
+
+
+          {showAIAnalysis && aiData && (
             <Card className="bg-white shadow-lg">
               <CardContent className="p-6">
                 <AIAnalysis
                   isUnlocked={isUnlocked}
                   aiData={aiData}
                 />
+
               </CardContent>
+
             </Card>
+
           )}
         </div>
       </div>
