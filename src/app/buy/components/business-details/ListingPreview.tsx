@@ -47,6 +47,7 @@ export default function ListingPreview({
   const [isUnlockedAi, setIsUnlockedAi] = useState(initialUnlockStatusAi)
   const [userCredits, setUserCredits] = useState(initialCredits)
   // const [aiCredits, setAiCredits] = useState(initialAiCredits)
+  const [loadingAi, setLoadingAi] = useState(false)
   const [showAIAnalysis, setShowAIAnalysis] = useState(!!aiDataResponse)
   const [aiData, setAiData] = useState(aiDataResponse)
 
@@ -115,6 +116,7 @@ export default function ListingPreview({
     }
 
     try {
+      setLoadingAi(true)
       const response = await fetch('/api/generate-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,6 +138,7 @@ export default function ListingPreview({
       const data = await response.json()
 
       if (!response.ok) {
+        setLoadingAi(false)
         if (response.status === 400) {
           toast({
             title: "Insufficient Credits",
@@ -162,14 +165,18 @@ export default function ListingPreview({
         description: `AI Analysis generated! You have ${data.remainingCredits} credits remaining.`
       })
     } catch (error) {
+      setLoadingAi(false)
       console.error('Error generating AI analysis:', error)
       toast({
         title: "Error",
         description: "Failed to generate AI analysis. Please try again later.",
         variant: "destructive"
       })
+    } finally {
+      setLoadingAi(false)
     }
   }
+
 
   return (
     <div className="container mx-auto p-4">
@@ -251,7 +258,7 @@ export default function ListingPreview({
 
                 <Button
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                  disabled={!isUnlocked}
+                  disabled={!isUnlocked || loadingAi}
                   onClick={handleAIAnalysis}
                 >
                   <Brain className="mr-2" />

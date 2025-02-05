@@ -32,41 +32,41 @@ export function Header() {
   const pathname = usePathname()
   const supabase = createClientComponentClient()
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          
-          setUser(profile)
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  // useEffect(() => {
+  //   const getUser = async () => {
+  //     try {
+  //       const { data: { session } } = await supabase.auth.getSession()
+  //       if (session?.user) {
+  //         const { data: profile } = await supabase
+  //           .from('users')
+  //           .select('*')
+  //           .eq('id', session.user.id)
+  //           .single()
 
-    getUser()
+  //         setUser(profile)
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching user:', error)
+  //     } finally {
+  //       setIsLoading(false)
+  //     }
+  //   }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        getUser()
-      } else {
-        setUser(null)
-        setIsLoading(false)
-      }
-    })
+  //   getUser()
 
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase])
+  //   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  //     if (session) {
+  //       getUser()
+  //     } else {
+  //       setUser(null)
+  //       setIsLoading(false)
+  //     }
+  //   })
+
+  //   return () => {
+  //     subscription.unsubscribe()
+  //   }
+  // }, [supabase])
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -94,9 +94,8 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === link.href ? 'text-primary' : 'text-muted-foreground'
-                }`}
+                className={`text-sm font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+                  }`}
               >
                 {link.label}
               </Link>
@@ -144,9 +143,8 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
-                        pathname === link.href ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-                      }`}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${pathname === link.href ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+                        }`}
                     >
                       {link.label}
                     </Link>
