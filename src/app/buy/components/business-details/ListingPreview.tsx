@@ -185,11 +185,11 @@ export default function ListingPreview({
           <Card className="bg-white shadow-lg mb-8">
             <CardContent className="p-6">
               <h1 className="text-3xl font-bold mb-4 text-blue-800">
-                {business.opportunity_name}
+                {business.business_name}
               </h1>
               <BusinessPhotoSlider photos={business.images} />
               <p className="mt-4 text-gray-700">
-                {business.opportunity_description}
+                {business.description}
               </p>
             </CardContent>
           </Card>
@@ -202,7 +202,7 @@ export default function ListingPreview({
                 acquisition_type={business.acquisition_type}
                 category={category.name}
                 area={area.name}
-                description={business.description}
+                description={business.opportunity_description}
               />
             </CardContent>
           </Card>

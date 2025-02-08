@@ -32,46 +32,47 @@ export function Header() {
   const pathname = usePathname()
   const supabase = createClientComponentClient()
 
-  // useEffect(() => {
-  //   const getUser = async () => {
-  //     try {
-  //       const { data: { session } } = await supabase.auth.getSession()
-  //       if (session?.user) {
-  //         const { data: profile } = await supabase
-  //           .from('users')
-  //           .select('*')
-  //           .eq('id', session.user.id)
-  //           .single()
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
 
-  //         setUser(profile)
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching user:', error)
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
+          setUser(profile)
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  //   getUser()
+    getUser()
 
-  //   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-  //     if (session) {
-  //       getUser()
-  //     } else {
-  //       setUser(null)
-  //       setIsLoading(false)
-  //     }
-  //   })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        getUser()
+      } else {
+        setUser(null)
+        setIsLoading(false)
+      }
+    })
 
-  //   return () => {
-  //     subscription.unsubscribe()
-  //   }
-  // }, [supabase])
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase])
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsOpen(false)
   }, [pathname])
+  console.log('user', user)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

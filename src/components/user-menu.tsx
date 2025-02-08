@@ -24,6 +24,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  console.log(user)
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const { toast } = useToast()

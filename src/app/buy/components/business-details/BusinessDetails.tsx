@@ -46,7 +46,7 @@ export default function BusinessDetails({ isUnlocked, acquisition_type, category
       </div>
       <div className="mt-4 bg-blue-50 p-4 rounded-lg">
         <p className="text-gray-700">
-          <span className="font-semibold text-blue-700">Business Description:{description}</span> 
+          <span className="font-semibold ">{description}</span> 
         </p>
       </div>
     </div>
