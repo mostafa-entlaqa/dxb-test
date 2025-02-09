@@ -26,16 +26,14 @@ export default function Step3({ icon: Icon }: Step3Props) {
   const addRevenueYear = (selectedYear: string) => {
     if (!revenuePerYear[selectedYear]) {
       setValue(`revenuePerYear.${selectedYear}`, 0)
-      const nextYear = availableRevenueYears.find(year => year !== selectedYear)
-      setSelectedRevenueYear(nextYear || "")
+      setSelectedRevenueYear("")
     }
   }
 
   const addCostYear = (selectedYear: string) => {
     if (!cost[selectedYear]) {
       setValue(`cost.${selectedYear}`, 0)
-      const nextYear = availableCostYears.find(year => year !== selectedYear)
-      setSelectedCostYear(nextYear || "")
+      setSelectedCostYear("")
     }
   }
 
@@ -112,9 +110,12 @@ export default function Step3({ icon: Icon }: Step3Props) {
           <div className="flex justify-between items-center mb-2">
             <Label>Revenue Per Year (Optional)</Label>
             {availableRevenueYears.length > 0 && (
-              <Select onValueChange={addRevenueYear} value={selectedRevenueYear}>
+              <Select 
+                onValueChange={addRevenueYear} 
+                value={selectedRevenueYear}
+              >
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Add Year" />
+                  <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableRevenueYears.map(year => (
@@ -127,7 +128,7 @@ export default function Step3({ icon: Icon }: Step3Props) {
           {Object.entries(revenuePerYear).map(([year, revenue]) => (
             <div key={year} className="flex items-center space-x-2 mt-2">
               <Input
-                type="number"
+                type="text"
                 value={year}
                 disabled
                 className="w-24"
@@ -135,8 +136,8 @@ export default function Step3({ icon: Icon }: Step3Props) {
               <Input
                 type="number"
                 placeholder="Revenue"
-                value={revenue}
-                onChange={(e) => setValue(`revenuePerYear.${year}`, parseFloat(e.target.value))}
+                value={revenue || ''}
+                onChange={(e) => setValue(`revenuePerYear.${year}`, Number(e.target.value))}
                 className="flex-1"
               />
               <Button
@@ -156,9 +157,12 @@ export default function Step3({ icon: Icon }: Step3Props) {
           <div className="flex justify-between items-center mb-2">
             <Label>Annual Cost (Optional)</Label>
             {availableCostYears.length > 0 && (
-              <Select onValueChange={addCostYear} value={selectedCostYear}>
+              <Select 
+                onValueChange={addCostYear} 
+                value={selectedCostYear}
+              >
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Add Year" />
+                  <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableCostYears.map(year => (

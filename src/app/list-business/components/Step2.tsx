@@ -76,7 +76,7 @@ export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
           <Label htmlFor="category">Category</Label>
           <Select value={watch('category_id')} onValueChange={(value) => setValue('category_id', parseInt(value), { shouldValidate: true })}>
             <SelectTrigger className={errors.category_id ? "border-red-500" : ""}>
-              <SelectValue placeholder="Select category"  />
+              <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
               {categories?.map((category) => (

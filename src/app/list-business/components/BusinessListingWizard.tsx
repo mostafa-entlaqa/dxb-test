@@ -175,6 +175,28 @@ export default function BusinessListingWizard({
             }
           }
 
+          const calculateMinMaxProfitMargins = (revenuePerYear: Record<string, number>, cost: Record<string, number>) => {
+            const profitMargins = Object.keys(revenuePerYear).map(year => {
+              if (revenuePerYear[year] && cost[year] && revenuePerYear[year] > 0) {
+                return ((revenuePerYear[year] - cost[year]) / revenuePerYear[year]) * 100;
+              }
+              return null;
+            }).filter((margin): margin is number => margin !== null);
+
+            if (profitMargins.length === 0) {
+              // If no historical data, use the current profit margin
+              return {
+                min_profit_margin: data.profitMargin,
+                max_profit_margin: data.profitMargin
+              };
+            }
+
+            return {
+              min_profit_margin: Math.min(...profitMargins),
+              max_profit_margin: Math.max(...profitMargins)
+            };
+          };
+
           const { data: business, error: businessError } = await supabase.from('businesses').insert({
             user_id: session.user.id,
             session_id: !freeMode ? sessionId : null,
@@ -191,14 +213,14 @@ export default function BusinessListingWizard({
             cost: data.cost,
             form_status: 'pending',
             acquisition_type: data.acquisition_type,
+            investment_percentage: data.acquisition_type === 'Invest' ? data.investmentPercentage : null,
             images: data.images || [],
             presentation_file: data.presentation,
             financials_file: data.financialStatement,
             category_id: data.category_id,
-            min_price: data.sellingPrice * 0.9,
-            max_price: data.sellingPrice * 1.1,
-            min_profit_margin: data.profitMargin * 0.9,
-            max_profit_margin: data.profitMargin * 1.1,
+            min_price: data.sellingPrice,
+            max_price: data.sellingPrice,
+            ...calculateMinMaxProfitMargins(data.revenuePerYear, data.cost),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }).select().single()

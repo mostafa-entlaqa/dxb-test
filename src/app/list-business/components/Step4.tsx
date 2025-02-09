@@ -11,11 +11,13 @@ interface Step4Props {
 }
 
 export default function Step4({ icon: Icon }: Step4Props) {
-  const { setValue, formState: { errors } } = useFormContext()
+  const { setValue,watch, formState: { errors } } = useFormContext()
   const [uploadingImages, setUploadingImages] = useState(false)
   const [uploadingPresentation, setUploadingPresentation] = useState(false)
   const [uploadingFinancial, setUploadingFinancial] = useState(false)
 
+  const images = watch('images')
+  console.log('watch images', images)
   const uploadFilesToStorage = useCallback(async (files: File[], bucket: string) => {
     try {
       const formData = new FormData()
