@@ -52,8 +52,8 @@ export default function BusinessListingWizard({
       revenuePerYear: {},
       cost: {},
       images: [],
-      presentation: undefined,
-      financialStatement: undefined
+      presentation: '',
+      financialStatement: ''
     }
   })
   

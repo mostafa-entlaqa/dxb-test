@@ -11,28 +11,44 @@ export async function uploadFile(
   const supabase = createServerComponentClient({ cookies })
   
   const file = formData.get('file') as File
-  if (!file) return null
-  
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
-  
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${uuidv4()}.${fileExt}`
-  
-  const { error: uploadError, data: uploadData } = await supabase.storage
-    .from(bucket)
-    .upload(fileName, buffer)
-
-  if (uploadError) throw uploadError
-  
-  if (uploadData) {
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName)
-    return publicUrl
+  if (!file) {
+    console.error('No file provided')
+    return null
   }
   
-  return null
+  try {
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${uuidv4()}.${fileExt}`
+    
+    const { error: uploadError, data: uploadData } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, buffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type
+      })
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+      throw uploadError
+    }
+    
+    if (uploadData) {
+      const { data } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(uploadData.path)
+      
+      return data.publicUrl
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error in uploadFile:', error)
+    throw error
+  }
 } 
 
 export async function uploadImages(

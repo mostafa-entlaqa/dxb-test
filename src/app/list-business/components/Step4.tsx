@@ -17,7 +17,11 @@ export default function Step4({ icon: Icon }: Step4Props) {
   const [uploadingFinancial, setUploadingFinancial] = useState(false)
 
   const images = watch('images')
+  const presentation = watch('presentation')
+  const financialStatement = watch('financialStatement')
   console.log('watch images', images)
+  console.log('watch presentation', presentation)
+  console.log('watch financialStatement', financialStatement)
   const uploadFilesToStorage = useCallback(async (files: File[], bucket: string) => {
     try {
       const formData = new FormData()
@@ -73,19 +77,21 @@ export default function Step4({ icon: Icon }: Step4Props) {
       try {
         setUploadingPresentation(true)
         const url = await uploadSingleFileToStorage(files[0], 'presentations')
+        if (!url) throw new Error('Failed to get upload URL')
         setValue('presentation', url, { shouldValidate: true })
       } catch (error) {
+        console.error('Error uploading presentation:', error)
         toast({
           title: "Error",
           description: "Failed to upload presentation. Please try again.",
           variant: "destructive"
         })
-        setValue('presentation', undefined, { shouldValidate: true })
+        setValue('presentation', '', { shouldValidate: true })
       } finally {
         setUploadingPresentation(false)
       }
     } else {
-      setValue('presentation', undefined, { shouldValidate: true })
+      setValue('presentation', '', { shouldValidate: true })
     }
   }, [setValue, uploadSingleFileToStorage])
 
@@ -95,19 +101,21 @@ export default function Step4({ icon: Icon }: Step4Props) {
       try {
         setUploadingFinancial(true)
         const url = await uploadSingleFileToStorage(files[0], 'financial-statements')
+        if (!url) throw new Error('Failed to get upload URL')
         setValue('financialStatement', url, { shouldValidate: true })
       } catch (error) {
+        console.error('Error uploading financial statement:', error)
         toast({
           title: "Error",
           description: "Failed to upload financial statement. Please try again.",
           variant: "destructive"
         })
-        setValue('financialStatement', undefined, { shouldValidate: true })
+        setValue('financialStatement', '', { shouldValidate: true })
       } finally {
         setUploadingFinancial(false)
       }
     } else {
-      setValue('financialStatement', undefined, { shouldValidate: true })
+      setValue('financialStatement', '', { shouldValidate: true })
     }
   }, [setValue, uploadSingleFileToStorage])
 
@@ -143,6 +151,22 @@ export default function Step4({ icon: Icon }: Step4Props) {
                   )}
                 </div>
               </FormControl>
+              {images && images.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 mb-2">Uploaded images:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {images.map((url: string, index: number) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={url} 
+                          alt={`Uploaded ${index + 1}`} 
+                          className="w-20 h-20 object-cover rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {errors.images && (
                 <FormMessage>
                   {errors.images.message as string}
@@ -176,6 +200,19 @@ export default function Step4({ icon: Icon }: Step4Props) {
                   )}
                 </div>
               </FormControl>
+              {presentation && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">Uploaded presentation:</p>
+                  <a 
+                    href={presentation} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    View presentation
+                  </a>
+                </div>
+              )}
               {errors.presentation && (
                 <FormMessage>
                   {errors.presentation.message as string}
@@ -209,6 +246,19 @@ export default function Step4({ icon: Icon }: Step4Props) {
                   )}
                 </div>
               </FormControl>
+              {financialStatement && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">Uploaded financial statement:</p>
+                  <a 
+                    href={financialStatement} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    View financial statement
+                  </a>
+                </div>
+              )}
               {errors.financialStatement && (
                 <FormMessage>
                   {errors.financialStatement.message as string}
