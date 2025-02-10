@@ -42,6 +42,7 @@ export default function BusinessListingWizard({
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
   const sessionId = searchParams.get('session_id')
+  
 
   const methods = useForm<FormData>({
     resolver: zodResolver(formBusinessSchema),
@@ -55,7 +56,7 @@ export default function BusinessListingWizard({
       financialStatement: undefined
     }
   })
-
+  
   console.log(methods.getValues('category_id'),'categories')
   useEffect(() => {
     

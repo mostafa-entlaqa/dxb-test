@@ -15,6 +15,7 @@ interface Step2Props {
 export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
   const { register, watch, setValue, formState: { errors } } = useFormContext()
   const acquisition_type = watch('acquisition_type')
+  
 
   return (
     <div className="space-y-6">

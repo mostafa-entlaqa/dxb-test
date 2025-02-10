@@ -37,13 +37,15 @@ export function Header() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
+          if (!user || user.id !== session.user.id ) {
+            const { data: profile } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
 
-          setUser(profile)
+            setUser(profile)
+          }
         }
       } catch (error) {
         console.error('Error fetching user:', error)
@@ -56,7 +58,9 @@ export function Header() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        getUser()
+        if (!user || user.id !== session.user.id) {
+          getUser()
+        }
       } else {
         setUser(null)
         setIsLoading(false)
@@ -66,7 +70,7 @@ export function Header() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [supabase, user])
 
   // Close mobile menu when route changes
   useEffect(() => {
