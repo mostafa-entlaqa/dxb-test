@@ -15,14 +15,14 @@ export default function FinancialsWidget({ isUnlocked, selling_price, monthly_re
         <DollarSign className="mr-4 text-green-600" />
         <div>
           <p className="font-semibold text-gray-700">Selling Price</p>
-          <p className="text-2xl text-blue-700">AED{selling_price}</p>
+          <p className="text-2xl text-blue-700">AED{selling_price.toLocaleString()}</p>
         </div>
       </div>
       <div className="bg-blue-50 p-4 rounded-lg flex items-center">
         <TrendingUp className="mr-4 text-blue-600" />
         <div>
           <p className="font-semibold text-gray-700">Monthly Revenue</p>
-          <p className="text-2xl text-blue-700">AED{monthly_revenue}</p>
+          <p className="text-2xl text-blue-700">AED{monthly_revenue.toLocaleString()}</p>
         </div>
       </div>
       <div className="bg-blue-50 p-4 rounded-lg flex items-center">

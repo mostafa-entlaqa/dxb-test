@@ -78,24 +78,7 @@ export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
             </p>
           )}
         </div>
-        <div>
-          <Label htmlFor="area">Area</Label>
-            <Select value={watch('category_id')} onValueChange={(value) => setValue('category_id', parseInt(value), { shouldValidate: true })}>
-              <SelectTrigger className={errors.area_id ? "border-red-500" : ""}>
-                <SelectValue placeholder="Select area" />
-              </SelectTrigger>
-              <SelectContent>
-                {areas?.map((area) => (
-                  <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          {errors.area_id && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.area_id.message as string}
-            </p>
-          )}
-        </div>
+      
 
         <div>
           <Label htmlFor="category">Category</Label>
