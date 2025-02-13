@@ -19,9 +19,7 @@ export default function Step4({ icon: Icon }: Step4Props) {
   const images = watch('images')
   const presentation = watch('presentation')
   const financialStatement = watch('financialStatement')
-  console.log('watch images', images)
-  console.log('watch presentation', presentation)
-  console.log('watch financialStatement', financialStatement)
+  
   const uploadFilesToStorage = useCallback(async (files: File[], bucket: string) => {
     try {
       const formData = new FormData()

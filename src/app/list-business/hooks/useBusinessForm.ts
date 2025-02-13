@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { formSchema, type FormData } from '../schemas/businessSchema'
+import { formBusinessSchema, type FormData } from '../schemas/businessSchema'
 import { useEffect } from 'react'
 
 export function useBusinessForm(success: boolean | null) {
   const methods = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formBusinessSchema),
     mode: 'onChange',
     defaultValues: {
       listingType: success ? 'paid' : 'free',

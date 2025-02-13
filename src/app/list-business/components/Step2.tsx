@@ -14,7 +14,13 @@ interface Step2Props {
 
 export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
   const { register, watch, setValue, formState: { errors } } = useFormContext()
+  
   const acquisition_type = watch('acquisition_type')
+
+  // console.log(watch('area_id'))
+  // console.log(watch('category_id'))
+
+  // console.log('testtttttttttt')
   
 
   return (
@@ -72,6 +78,24 @@ export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
             </p>
           )}
         </div>
+        <div>
+          <Label htmlFor="area">Area</Label>
+            <Select value={watch('category_id')} onValueChange={(value) => setValue('category_id', parseInt(value), { shouldValidate: true })}>
+              <SelectTrigger className={errors.area_id ? "border-red-500" : ""}>
+                <SelectValue placeholder="Select area" />
+              </SelectTrigger>
+              <SelectContent>
+                {areas?.map((area) => (
+                  <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          {errors.area_id && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.area_id.message as string}
+            </p>
+          )}
+        </div>
 
         <div>
           <Label htmlFor="category">Category</Label>
@@ -81,6 +105,7 @@ export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
             </SelectTrigger>
             <SelectContent>
               {categories?.map((category) => (
+                // @ts-ignore
                 <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
               ))}
             </SelectContent>
