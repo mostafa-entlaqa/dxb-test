@@ -1,13 +1,22 @@
-import { DollarSign, TrendingUp, PieChart } from "lucide-react"
+import { DollarSign, TrendingUp, PieChart, Share2 } from "lucide-react"
 
 interface FinancialsWidgetProps {
   isUnlocked: boolean
   selling_price: number
   monthly_revenue: number
   profit_margin: number
+  acquisition_type: string
+  investment_percentage?: number
 }
 
-export default function FinancialsWidget({ isUnlocked, selling_price, monthly_revenue, profit_margin }: FinancialsWidgetProps) {
+export default function FinancialsWidget({ 
+  isUnlocked, 
+  selling_price, 
+  monthly_revenue, 
+  profit_margin,
+  acquisition_type,
+  investment_percentage 
+}: FinancialsWidgetProps) {
   return (
     <div className={`space-y-4 ${isUnlocked ? "" : "filter blur-sm"}`}>
       <h2 className="text-2xl font-semibold mb-4 text-blue-800">Key Financials</h2>
@@ -32,6 +41,15 @@ export default function FinancialsWidget({ isUnlocked, selling_price, monthly_re
           <p className="text-2xl text-blue-700">{profit_margin}%</p>
         </div>
       </div>
+      {acquisition_type === 'Invest' && investment_percentage && (
+        <div className="bg-blue-50 p-4 rounded-lg flex items-center">
+          <Share2 className="mr-4 text-orange-600" />
+          <div>
+            <p className="font-semibold text-gray-700">Investment - Share</p>
+            <p className="text-2xl text-blue-700">{investment_percentage}%</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -12,6 +12,7 @@ import Documents from "./Documents"
 import FinancialsWidget from "./FinancialsWidget"
 import AIAnalysis from "./AIAnalysis"
 import { Business, Category, Area } from "../../type"
+import { Badge } from "@/components/ui/badge"
 
 interface ListingPreviewProps {
   business: Business
@@ -184,9 +185,14 @@ export default function ListingPreview({
         <div className="w-full lg:w-2/3">
           <Card className="bg-white shadow-lg mb-8">
             <CardContent className="p-6">
-              <h1 className="text-3xl font-bold mb-4 text-blue-800">
-                {business.business_name}
-              </h1>
+              <div className="flex justify-between items-start mb-4">
+                <h1 className="text-3xl font-bold text-blue-800">
+                  {business.business_name}
+                </h1>
+                {business.featured && (
+                  <Badge className="bg-blue-600">Featured Listing</Badge>
+                )}
+              </div>
               <BusinessPhotoSlider photos={business.images} />
               <p className="mt-4 text-gray-700">
                 {business.description}
@@ -239,6 +245,8 @@ export default function ListingPreview({
                 selling_price={business.selling_price}
                 monthly_revenue={business.monthly_revenue}
                 profit_margin={business.profit_margin}
+                acquisition_type={business.acquisition_type}
+                investment_percentage={business.investment_percentage}
               />
 
               <div className="mt-6 space-y-4">

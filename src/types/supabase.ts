@@ -25,6 +25,7 @@ export interface Database {
           revenue: Json
           cost: Json
           presentation_file: string
+          investment_percentage: number
           financials_file: string
           category_id: number
           area_id: number

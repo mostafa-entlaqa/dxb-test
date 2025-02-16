@@ -17,10 +17,6 @@ export default function Step2({ icon: Icon, categories, areas }: Step2Props) {
   
   const acquisition_type = watch('acquisition_type')
 
-  // console.log(watch('area_id'))
-  // console.log(watch('category_id'))
-
-  // console.log('testtttttttttt')
   
 
   return (

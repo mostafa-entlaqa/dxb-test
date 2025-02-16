@@ -47,6 +47,15 @@ export default function BusinessCard({business}: {business: any}) {
                   {business.profit_margin}%
                   </div>
                 </div>
+                {business.acquisition_type === 'Invest' && (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold">Investment</h4>
+                      <Percent className="inline-block w-4 h-4 mr-1" />
+                      {business.investment_percentage}%
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Calendar className="inline-block w-4 h-4 mr-1" />
                   Listed {new Date(business.created_at).toLocaleDateString()}
