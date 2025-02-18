@@ -51,13 +51,11 @@ export default function ListingPreview({
   const [loadingAi, setLoadingAi] = useState(false)
   const [showAIAnalysis, setShowAIAnalysis] = useState(!!aiDataResponse)
   const [aiData, setAiData] = useState(aiDataResponse)
+  const [businessData, setBusinessData] = useState(business)
 
   console.log('initialAiCredits', initialAiCredits)
 
-
-
   const { toast } = useToast()
-
 
   const handleUnlock = async () => {
     if (isUnlocked) return // Already unlocked
@@ -81,9 +79,9 @@ export default function ListingPreview({
         }
         throw new Error(data.error)
       }
-
       setIsUnlocked(true)
       setUserCredits(data.remainingCredits)
+      setBusinessData(data.business)
 
       toast({
         title: "Success",
@@ -178,7 +176,6 @@ export default function ListingPreview({
     }
   }
 
-
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col lg:flex-row gap-8">
@@ -187,15 +184,15 @@ export default function ListingPreview({
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h1 className="text-3xl font-bold text-blue-800">
-                  {business.business_name}
+                  {businessData.business_name}
                 </h1>
-                {business.featured && (
+                {businessData.featured && (
                   <Badge className="bg-blue-600">Featured Listing</Badge>
                 )}
               </div>
-              <BusinessPhotoSlider photos={business.images} />
+              <BusinessPhotoSlider photos={businessData.images} />
               <p className="mt-4 text-gray-700">
-                {business.description}
+                {businessData.description}
               </p>
             </CardContent>
           </Card>
@@ -204,11 +201,11 @@ export default function ListingPreview({
             <CardContent className="p-6">
               <BusinessDetails
                 isUnlocked={isUnlocked}
-                opportunity_name={business.opportunity_name}
-                acquisition_type={business.acquisition_type}
+                opportunity_name={businessData.opportunity_name}
+                acquisition_type={businessData.acquisition_type}
                 category={category.name}
                 area={area.name}
-                description={business.opportunity_description}
+                description={businessData.opportunity_description}
               />
             </CardContent>
           </Card>
@@ -217,10 +214,10 @@ export default function ListingPreview({
             <CardContent className="p-6">
               <FinancialPerformance
                 isUnlocked={isUnlocked}
-                revenue={business.revenue as Record<string, number>}
-                cost={business.cost as Record<string, number>}
-                minProfitMargin={business.min_profit_margin}
-                maxProfitMargin={business.max_profit_margin}
+                revenue={businessData.revenue as Record<string, number>}
+                cost={businessData.cost as Record<string, number>}
+                minProfitMargin={businessData.min_profit_margin}
+                maxProfitMargin={businessData.max_profit_margin}
               />
             </CardContent>
           </Card>
@@ -230,8 +227,8 @@ export default function ListingPreview({
             <CardContent className="p-6">
               <Documents
                 isUnlocked={isUnlocked}
-                presentation_file={business.presentation_file}
-                financials_file={business.financials_file}
+                presentation_file={businessData.presentation_file}
+                financials_file={businessData.financials_file}
               />
             </CardContent>
           </Card>
@@ -242,11 +239,11 @@ export default function ListingPreview({
             <CardContent className="p-6">
               <FinancialsWidget
                 isUnlocked={isUnlocked}
-                selling_price={business.selling_price}
-                monthly_revenue={business.monthly_revenue}
-                profit_margin={business.profit_margin}
-                acquisition_type={business.acquisition_type}
-                investment_percentage={business.investment_percentage}
+                selling_price={businessData.selling_price}
+                monthly_revenue={businessData.monthly_revenue}
+                profit_margin={businessData.profit_margin}
+                acquisition_type={businessData.acquisition_type}
+                investment_percentage={businessData.investment_percentage}
               />
 
               <div className="mt-6 space-y-4">

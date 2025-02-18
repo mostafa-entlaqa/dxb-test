@@ -102,9 +102,6 @@ Format the response as a valid JSON object with these exact keys: "strength" and
 
         const analysis = JSON.parse(completion.choices[0].message.content || '{}')
 
-        console.log(analysis)
-        console.log('businessData.id', businessData.id)
-        console.log('user.id', user.id)
         // Store in database
         const { error: insertError } = await supabase
             .from('ai_analysis')

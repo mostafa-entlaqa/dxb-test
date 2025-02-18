@@ -5,6 +5,10 @@ import ListingPreview from '../components/business-details/ListingPreview'
 async function getBusinessData(businessId: string) {
   const supabase = createServerComponentClient({ cookies })
 
+
+
+
+
   try {
     // Get user data
     const { data: { user } } = await supabase.auth.getUser()
@@ -92,9 +96,23 @@ export default async function BusinessPage({ params }: { params: { id: string } 
   console.log('Processed AI Response:', aiDataResponse) // Debug log
 
 
+  const dummyBusinessData = {
+    id: data.business.id,
+    business_name: data.business.business_name,
+    description: data.business.description,
+    opportunity_name: 'Dummy Opportunity',
+    acquisition_type: 'Dummy Type',
+    selling_price: 100000,
+    monthly_revenue: 5000,
+    revenue: 60000,
+    cost: 30000,
+    profit_margin: 50,
+    images: data.business.images, // Add dummy images if needed
+  }
+
   return (
     <ListingPreview
-      business={data.business}
+      business={data.isUnlocked ? data.business : dummyBusinessData}
       category={data.category}
       area={data.area}
       aiDataResponse={aiDataResponse}

@@ -67,9 +67,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to record unlock' }, { status: 500 })
     }
 
+    // Fetch the updated business data
+    const { data: updatedBusiness, error: businessError } = await supabase
+      .from('businesses') // Adjust this to your actual business table name
+      .select('*')
+      .eq('id', businessId)
+      .single()
+
+    if (businessError) {
+      console.error('Business fetch error:', businessError)
+      return NextResponse.json({ error: 'Failed to fetch updated business data' }, { status: 500 })
+    }
+
     return NextResponse.json({
       success: true,
-      remainingCredits: currentCredits - UNLOCK_COST
+      remainingCredits: currentCredits - UNLOCK_COST,
+      business: updatedBusiness // Return the updated business data
     })
   } catch (error) {
     console.error('Unexpected error:', error)

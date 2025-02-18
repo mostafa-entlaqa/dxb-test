@@ -37,7 +37,7 @@ export function Header() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          if (!user || user.id !== session.user.id ) {
+          if (!user || user.id !== session.user.id) {
             const { data: profile } = await supabase
               .from('users')
               .select('*')
@@ -76,7 +76,6 @@ export function Header() {
   useEffect(() => {
     setIsOpen(false)
   }, [pathname])
-  console.log('user', user)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

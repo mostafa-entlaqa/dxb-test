@@ -24,7 +24,6 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
-  console.log(user)
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
@@ -73,21 +72,21 @@ export function UserMenu({ user }: UserMenuProps) {
           </div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => router.push('/dashboard')}
           className="cursor-pointer flex items-center"
         >
           <LayoutDashboard className="h-4 w-4 mr-2" />
           Dashboard
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => router.push('/profile')}
           className="cursor-pointer flex items-center"
         >
           <UserCircle className="h-4 w-4 mr-2" />
           Profile
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => router.push('/settings/password')}
           className="cursor-pointer flex items-center"
         >
@@ -95,7 +94,7 @@ export function UserMenu({ user }: UserMenuProps) {
           Change Password
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={handleLogout}
           className="cursor-pointer text-red-600 focus:text-red-600 flex items-center"
         >
