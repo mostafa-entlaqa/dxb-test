@@ -9,13 +9,13 @@ interface FinancialsWidgetProps {
   investment_percentage?: number
 }
 
-export default function FinancialsWidget({ 
-  isUnlocked, 
-  selling_price, 
-  monthly_revenue, 
+export default function FinancialsWidget({
+  isUnlocked,
+  selling_price,
+  monthly_revenue,
   profit_margin,
   acquisition_type,
-  investment_percentage 
+  investment_percentage
 }: FinancialsWidgetProps) {
   return (
     <div className={`space-y-4 ${isUnlocked ? "" : "filter blur-sm"}`}>
@@ -23,7 +23,7 @@ export default function FinancialsWidget({
       <div className="bg-blue-50 p-4 rounded-lg flex items-center">
         <DollarSign className="mr-4 text-green-600" />
         <div>
-          <p className="font-semibold text-gray-700">Selling Price</p>
+          <p className="font-semibold text-gray-700">{acquisition_type === 'Buy' ? 'Selling Price' : "Required Investment"}</p>
           <p className="text-2xl text-blue-700">AED{selling_price.toLocaleString()}</p>
         </div>
       </div>
@@ -45,7 +45,7 @@ export default function FinancialsWidget({
         <div className="bg-blue-50 p-4 rounded-lg flex items-center">
           <Share2 className="mr-4 text-orange-600" />
           <div>
-            <p className="font-semibold text-gray-700">Investment - Share</p>
+            <p className="font-semibold text-gray-700">Equity</p>
             <p className="text-2xl text-blue-700">{investment_percentage}%</p>
           </div>
         </div>
