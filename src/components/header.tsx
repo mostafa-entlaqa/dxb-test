@@ -23,6 +23,8 @@ const navigationLinks = [
   { href: '/buy', label: "Buy Business" },
   { href: '/sell', label: "Sell Business" },
   { href: '/contact', label: "Contact" },
+  // { href: '/my-listings', label: "My Business Listings" },
+
 ]
 
 export function Header() {
@@ -31,6 +33,8 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const supabase = createClientComponentClient()
+
+
 
   useEffect(() => {
     const getUser = async () => {

@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { User, LogOut, LayoutDashboard, UserCircle, KeyRound } from 'lucide-react'
+import { User, LogOut, LayoutDashboard, UserCircle, KeyRound, Briefcase } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
 interface UserMenuProps {
@@ -92,6 +92,13 @@ export function UserMenu({ user }: UserMenuProps) {
         >
           <KeyRound className="h-4 w-4 mr-2" />
           Change Password
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => router.push('/my-listings')}
+          className="cursor-pointer flex items-center"
+        >
+          <Briefcase className="h-4 w-4 mr-2" />
+          My Business Listings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

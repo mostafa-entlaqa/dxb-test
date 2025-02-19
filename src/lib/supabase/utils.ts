@@ -11,4 +11,4 @@ export const getServerSupabase = () => {
 // For client-side usage (Client Components)
 export const getClientSupabase = () => {
   return createClientComponentClient<Database>()
-} 
+}
