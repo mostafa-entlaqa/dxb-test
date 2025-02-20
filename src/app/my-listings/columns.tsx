@@ -156,7 +156,7 @@ export const columns: ColumnDef<BusinessTypeCol>[] = [
             variant="outline"
           >
             <Crown className="h-3 w-3" />
-            Premium
+            Upgrade
           </Badge>
         ) : (
           <Badge 

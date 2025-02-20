@@ -19,18 +19,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-
-        console.log(user.id)
+        console.log('User ID:', user.id)
 
         // Get business details
-        const { data: business } = await supabase
+        const { data: business, error: businessError } = await supabase
             .from('businesses')
             .select('*')
             .eq('id', businessId)
             .eq('user_id', user.id)
             .single()
 
-        if (!business) {
+        if (businessError || !business) {
+            console.error('Business fetch error:', businessError)
             return NextResponse.json(
                 { error: 'Business not found or unauthorized' }, 
                 { status: 404 }
@@ -38,19 +38,19 @@ export async function POST(request: Request) {
         }
 
         // Check if there's already a paid invoice
-        const { data: existingInvoice } = await supabase
-            .from('invoices')
-            .select('*')
-            .eq('business_id', businessId)
-            .eq('status', 'paid')
-            .single()
+        // const { data: existingInvoice, error: invoiceError } = await supabase
+        //     .from('invoices')
+        //     .select('*')
+        //     .eq('business_id', businessId)
+        //     .eq('status', 'paid')
+        //     .single()
 
-        if (existingInvoice) {
-            return NextResponse.json(
-                { error: 'Business is already upgraded' },
-                { status: 400 }
-            )
-        }
+        // if (existingInvoice) {
+        //     return NextResponse.json(
+        //         { error: 'Business is already upgraded' },
+        //         { status: 400 }
+        //     )
+        // }
 
         // Get the base URL from the request if environment variable is not set
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
@@ -65,8 +65,9 @@ export async function POST(request: Request) {
                         currency: 'aed',
                         product_data: {
                             name: 'Business Feature Upgrade',
+                            description: `Upgrade for Business #${businessId}`,
                         },
-                        unit_amount: 1499 * 100,
+                        unit_amount: 1499 * 100, // 1,499 AED
                     },
                     quantity: 1,
                 },
@@ -88,20 +89,33 @@ export async function POST(request: Request) {
         })
 
         // Create a pending invoice
-        await supabase.from('invoices').insert({
-            user_id: user.id,
-            business_id: businessId,
-            amount: 1499,
-            currency: 'AED',
-            status: 'pending',
-            id: checkoutSession.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        })
+        const { data: invoice, error: createInvoiceError } = await supabase
+            .from('invoices')
+            .insert({
+                user_id: user.id,
+                business_id: parseInt(businessId), // Convert to number since business.id is BIGINT
+                amount: 1499,
+                currency: 'AED',
+                status: 'pending',
+                stripe_invoice_id: checkoutSession.id // Store session ID here
+            })
+            .select()
+            .single()
+
+        if (createInvoiceError) {
+            console.error('Failed to create invoice:', createInvoiceError)
+            return NextResponse.json(
+                { error: 'Failed to create invoice' },
+                { status: 500 }
+            )
+        }
+
+        console.log('Created invoice:', invoice)
 
         return NextResponse.json({
             url: checkoutSession.url,
-            sessionId: checkoutSession.id
+            sessionId: checkoutSession.id,
+            invoice
         })
 
     } catch (error: any) {
@@ -111,4 +125,4 @@ export async function POST(request: Request) {
             { status: 500 }
         )
     }
-} 
+}
