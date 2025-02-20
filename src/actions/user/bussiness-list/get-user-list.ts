@@ -20,7 +20,7 @@ export const getUserList = async () => {
         return { businessUserData: null };
     }
 
-    const { data: businessUserData, error } = await supabase.from('businesses').select('id,images,opportunity_name,form_status,approve,user_id').eq('user_id', user.id)
+    const { data: businessUserData, error } = await supabase.from('businesses').select('id,images,opportunity_name,form_status,approveAt,user_id,approve_status,featured').eq('user_id', user.id)
     if (error) {
         console.log(error)
     }
