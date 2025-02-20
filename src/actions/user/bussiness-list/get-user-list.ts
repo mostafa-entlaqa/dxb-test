@@ -25,8 +25,23 @@ export const getUserList = async () => {
         console.log(error)
     }
 
+    // Get unlock counts for each business
+    const enhancedBusinessData = await Promise.all(
+        businessUserData?.map(async (business) => {
+            const { count } = await supabase
+                .from('unlocked_businesses')
+                .select('*', { count: 'exact' })
+                .eq('business_id', business.id);
+            
+            return {
+                ...business,
+                views_count: count || 0
+            };
+        }) || []
+    );
+
     return {
-        businessUserData
+        businessUserData: enhancedBusinessData
     }
 }
 
