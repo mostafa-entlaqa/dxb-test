@@ -8,6 +8,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Crown, Edit, Eye, MessageSquare, MoreHorizontal } from "lucide-react"
+import Link from "next/link"
 
 interface BusinessActionsMenuProps {
     businessId: string
@@ -26,8 +27,10 @@ export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade }: Busin
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => console.log("View", businessId)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
+                       <Link href={`/buy/${businessId}`} className="flex items-center">
+                       <Eye className="h-4 w-4 mr-2" />
+                       View Details
+                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => console.log("Edit", businessId)}>
                         <Edit className="h-4 w-4 mr-2" />

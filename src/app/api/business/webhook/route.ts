@@ -34,54 +34,30 @@ export async function POST(request: Request) {
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session
-        console.log('Processing webhook for session:', session.id)
-        console.log('Session metadata:', session.metadata)
-     
+        const businessId = session.metadata?.businessId
+
+        // Set expiration date to 1 minute from now for testing
+        const expirationDate = new Date()
+        expirationDate.setDate(expirationDate.getDate() + 30) // 1 minute subscription
+
         try {
-            if (!session.metadata?.businessId || !session.metadata?.user_id) {
-                throw new Error('Missing required metadata: businessId or user_id')
-            }
+            console.log('Updating business with expiration:', {
+                businessId,
+                expirationDate: expirationDate.toISOString()
+            })
 
-            const businessId = parseInt(session.metadata.businessId)
-            if (isNaN(businessId)) {
-                throw new Error(`Invalid business ID: ${session.metadata.businessId}`)
-            }
-
-            // First verify the business exists
-            const { data: existingBusiness, error: fetchError } = await supabase
-                .from('businesses')
-                .select('*')
-                .eq('id', businessId)
-                .single()
-
-            console.log('Existing business:', existingBusiness)
-            console.log('Fetch error:', fetchError)
-
-            if (fetchError) {
-                console.error('Business fetch error:', fetchError)
-                throw new Error(`Failed to fetch business: ${fetchError.message}`)
-            }
-
-            if (!existingBusiness) {
-                throw new Error(`Business not found with ID: ${businessId}`)
-            }
-
-            // Update business status using admin client
+            // Update business with featured status and expiration date
             const { data: business, error: businessError } = await supabase
                 .from('businesses')
                 .update({
                     featured: true,
-                    session_id:session.id,
+                    subscription_end_date: expirationDate.toISOString(),
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', businessId)
                 .select()
 
-            console.log('Business update result:', { 
-                business, 
-                error: businessError,
-                businessId
-            })
+            console.log('Business update result:', { business, error: businessError })
 
             if (businessError) {
                 console.error('Business update error:', businessError)
@@ -109,7 +85,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ 
                     success: true,
                     message: 'Payment already processed',
-                    business: business?.[0] || existingBusiness,
+                    business: business?.[0] || existingInvoice,
                     invoice: existingInvoice
                 })
             }
@@ -144,13 +120,13 @@ export async function POST(request: Request) {
             }
 
             console.log('Successfully processed payment:', {
-                business: business?.[0] || existingBusiness,
+                business: business?.[0] || existingInvoice,
                 invoice
             })
 
             return NextResponse.json({ 
                 success: true, 
-                business: business?.[0] || existingBusiness,
+                business: business?.[0] || existingInvoice,
                 invoice
             })
         } catch (error) {

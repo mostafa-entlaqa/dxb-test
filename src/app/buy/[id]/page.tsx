@@ -23,23 +23,23 @@ async function getBusinessData(businessId: string) {
       return { error: 'Business not found' }
     }
 
-    // Get category and area data
-    const [categoryResponse, areaResponse] = await Promise.all([
-      supabase.from('business_categories').select('*').eq('id', businessResponse.data.category_id).single(),
-      supabase.from('areas').select('*').eq('id', businessResponse.data.area_id).single()
-    ])
-
-    // Check if business is already unlocked for this user
+    // Check if the business belongs to the current user
     let unlockStatus = false
     if (user) {
-      const { data: unlockData } = await supabase
-        .from('unlocked_businesses')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('business_id', businessId)
-        .single()
+      // Set unlockStatus to true if the user is the owner of the business
+      if (businessResponse.data.user_id === user.id) {
+        unlockStatus = true
+      } else {
+        // Check unlocked_businesses table only if user is not the owner
+        const { data: unlockData } = await supabase
+          .from('unlocked_businesses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('business_id', businessId)
+          .single()
 
-      unlockStatus = !!unlockData
+        unlockStatus = !!unlockData
+      }
     }
     let unlockStatusAi = false
     let aiData = null
@@ -57,6 +57,12 @@ async function getBusinessData(businessId: string) {
       console.log('aiData', aiData)
       console.log('unlockStatusAi', unlockStatusAi)
     }
+
+    // Get category and area data
+    const [categoryResponse, areaResponse] = await Promise.all([
+      supabase.from('business_categories').select('*').eq('id', businessResponse.data.category_id).single(),
+      supabase.from('areas').select('*').eq('id', businessResponse.data.area_id).single()
+    ])
 
     return {
       business: businessResponse.data,
