@@ -8,7 +8,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Crown, Edit, Eye, MessageSquare, MoreHorizontal } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface BusinessActionsMenuProps {
     businessId: string
@@ -17,6 +17,8 @@ interface BusinessActionsMenuProps {
 }
 
 export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade }: BusinessActionsMenuProps) {
+    const router = useRouter()
+
     return (
         <div className="flex items-center justify-end gap-2">
             <DropdownMenu>
@@ -26,13 +28,11 @@ export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade }: Busin
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => console.log("View", businessId)}>
-                       <Link href={`/buy/${businessId}`} className="flex items-center">
-                       <Eye className="h-4 w-4 mr-2" />
-                       View Details
-                       </Link>
+                    <DropdownMenuItem onClick={() => router.push(`/buy/${businessId}`)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => console.log("Edit", businessId)}>
+                    <DropdownMenuItem onClick={() => router.push(`/edit/${businessId}`)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                     </DropdownMenuItem>

@@ -92,7 +92,7 @@ export default function Step1({ icon: Icon }: Step1Props) {
           <div className={`flex items-center space-x-2 p-4 border rounded-md transition-colors ${
             success === 'true' 
               ? 'opacity-50 cursor-not-allowed bg-gray-100' 
-              : 'hover:bg-blue-50 cursor-pointer'
+              : ' hover:bg-primary/50 cursor-pointer'
           }`}>
             <RadioGroupItem 
               value="free" 
@@ -107,7 +107,7 @@ export default function Step1({ icon: Icon }: Step1Props) {
               <p className="text-sm text-gray-500">Basic listing with essential features</p>
             </Label>
           </div>
-          <div className="flex items-center space-x-2 p-4 border rounded-md hover:bg-blue-50 transition-colors mt-2">
+          <div className="flex items-center space-x-2 p-4 border rounded-md hover:bg-primary/50 transition-colors mt-2">
             <RadioGroupItem value="paid" id="paid" disabled={isLoading} />
             <Label htmlFor="paid" className="flex-grow cursor-pointer">
               <div className="font-medium">Premium Listing - 1,499 AED</div>
@@ -130,9 +130,9 @@ export default function Step1({ icon: Icon }: Step1Props) {
         )}
       </div>
 
-      <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+      <div className=" p-4 rounded-md border border-blue-200 dark:border-primary">
         <h3 className="font-semibold mb-2 text-blue-800">Benefits of Premium Listing:</h3>
-        <ul className="list-disc list-inside space-y-1 text-blue-700">
+        <ul className="list-disc list-inside space-y-1 text-blue-700 ">
           <li>All Free Listing features</li>
           <li>Featured Ad for One Month</li>
           <li>Promoted on Social Media</li>
