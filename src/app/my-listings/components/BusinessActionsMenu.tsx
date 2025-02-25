@@ -45,7 +45,7 @@ export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade }: Busin
                             Upgrade to Premium
                         </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => console.log("Messages", businessId)}>
+                    <DropdownMenuItem onClick={() => router.push(`/messages/${businessId}`)}>
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Messages
                     </DropdownMenuItem>

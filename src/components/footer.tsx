@@ -13,6 +13,12 @@ const footerLinks = [
 ]
 
 export default function Footer() {
+  const shouldHideFooter = window.location.pathname.includes('/messages');
+
+  if(shouldHideFooter) {
+    return null
+  }
+
   return (
     <footer className="bg-background border-t">
       <div className="container mx-auto px-4 py-12">
