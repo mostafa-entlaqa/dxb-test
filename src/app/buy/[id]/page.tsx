@@ -1,6 +1,10 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import ListingPreview from '../components/business-details/ListingPreview'
+import { Button } from "@/components/ui/button"
+import { MessageSquare } from "lucide-react"
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 async function getBusinessData(businessId: string) {
   const supabase = createServerComponentClient({ cookies })
@@ -116,6 +120,30 @@ export default async function BusinessPage({ params }: { params: { id: string } 
     images: data.business.images, // Add dummy images if needed
   }
 
+  const supabase = createServerComponentClient({ cookies })
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Add this button in your UI where appropriate
+  const MessageSellerButton = () => {
+    if (!session) {
+      return (
+        <Button onClick={() => redirect('/login')} variant="outline">
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Login to Message Seller
+        </Button>
+      )
+    }
+    
+    return (
+      <Button asChild>
+        <Link href={`/messages/${params.id}`}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Message Seller
+        </Link>
+      </Button>
+    )
+  }
+
   return (
     <ListingPreview
       business={data.isUnlocked ? data.business : dummyBusinessData}
@@ -126,7 +154,9 @@ export default async function BusinessPage({ params }: { params: { id: string } 
       initialUnlockStatus={data.isUnlocked}
       userCredits={data.userCredits}
       aiUserCredits={data.aiUserCredits}
-    />
+    >
+      <MessageSellerButton />
+    </ListingPreview>
   )
 }
 
