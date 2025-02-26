@@ -10,8 +10,9 @@ export default async function MessagesPage({ params, searchParams }: {
   params: { id: string },
   searchParams: { buyer?: string }
 }) {
-  const buyerId = searchParams.buyer || null
   const supabase = getServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
 
   // Fetch business details
   const { data: business } = await supabase
@@ -42,16 +43,20 @@ export default async function MessagesPage({ params, searchParams }: {
     area: areaResponse.data || { name: '' }
   }
 
+  // For buyers, we need to set them as the buyer in the URL
+  const isOwner = business.user_id === user.id
+  const buyerId = isOwner ? (searchParams.buyer || null) : user.id
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
-      <Suspense fallback={<div className="w-64" />}>
-        {/* @ts-expect-error Async Server Component */}
-        <SidebarContainer businessId={params.id} business={processedBusiness} className="w-64 border-r border-border" />
-      </Suspense>
-      <div className="flex flex-col flex-1">
-        <BusinessOpportunityHeader business={processedBusiness} className="border-b border-border" />
-        <MessageThread businessId={params.id} buyerId={buyerId} className="flex-1" />
-      </div>
+    <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden">
+    <Suspense fallback={<div className="w-64" />}>
+      {/* @ts-expect-error Async Server Component */}
+      <SidebarContainer businessId={params.id} business={processedBusiness} className="w-64 border-r border-border" />
+    </Suspense>
+    <div className="flex flex-col flex-1">
+      <BusinessOpportunityHeader business={processedBusiness} className="border-b border-border" />
+      <MessageThread businessId={params.id} buyerId={buyerId} className="flex-1" />
     </div>
+  </div>
   )
 }

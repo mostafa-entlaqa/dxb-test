@@ -4,6 +4,7 @@ import { getCategoryById } from '@/actions/user/bussiness-list/get-category-by-i
 import { getAreaById } from '@/actions/user/bussiness-list/get-area-by-id'
 import { SidebarClient } from './sidebar'
 import { getServerSupabase } from '@/lib/supabase/utils'
+import { BusinessDetails, Message, Business, BuyerStatus } from '../type'
 
 export async function SidebarContainer({ 
   businessId,
@@ -15,76 +16,90 @@ export async function SidebarContainer({
   className?: string 
 }) {
   const supabase = getServerSupabase()
-
-  // Get current user
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  // Get category and area data
-  const [categoryResponse, areaResponse] = await Promise.all([
-    getCategoryById(business.category_id),
-    getAreaById(business.area_id)
-  ])
-
   const isOwner = business.user_id === user.id
 
-  // Get buyer statuses with user info
-  const { data: buyerStatuses } = await supabase
-    .from('buyer_status')
-    .select(`
-      id,
-      business_id,
-      buyer_id,
-      status,
-      has_unread
-    `)
-    .eq('business_id', businessId)
+  if (isOwner) {
+    // Owner view - show buyers for this business
+    const { data: buyerStatuses } = await supabase
+      .from('buyer_status')
+      .select(`
+        id,
+        business_id,
+        buyer_id,
+        status,
+        has_unread
+      `)
+      .eq('business_id', businessId)
+  
+    // Get users data
+    const { data: usersData } = await supabase
+      .from('users')
+      .select('id, email, full_name, profile_pic_url, interest')
+      .in('id', buyerStatuses?.map(status => status.buyer_id) || [])
 
-  // Get users data directly
-  const { data: usersData } = await supabase
-    .from('users')
-    .select('id, email, full_name, profile_pic_url, interest')
-    .in('id', buyerStatuses?.map(status => status.buyer_id) || [])
+    const userMap = new Map(usersData?.map(user => [user.id, user]))
 
-  const userMap = new Map(usersData?.map(user => [user.id, user]))
-
-  const processedBuyerStatuses = buyerStatuses
-    ?.filter(status => {
-      if (isOwner) {
-        // If owner, show all buyers except yourself
-        return status.buyer_id !== user.id
-      } else {
-        // If buyer, show only the business owner's messages
-        return status.buyer_id === business.user_id
-      }
-    })
-    .map(status => {
-      const userData = userMap.get(status.buyer_id)
-      return {
+    const processedBuyerStatuses = buyerStatuses
+      ?.filter(status => status.buyer_id !== user.id)
+      .map(status => ({
         ...status,
         buyer: {
           id: status.buyer_id,
-          email: userData?.email || '',
-          full_name: userData?.full_name || userData?.email?.split('@')[0] || '',
-          profile_pic_url: userData?.profile_pic_url || '',
-          interest: userData?.interest || ''
+          email: userMap.get(status.buyer_id)?.email || '',
+          full_name: userMap.get(status.buyer_id)?.full_name || '',
+          profile_pic_url: userMap.get(status.buyer_id)?.profile_pic_url || '',
         }
-      }
-    }) || []
+      })) || []
 
-  // Process the data
-  const processedBusiness = {
-    ...business,
-    category: categoryResponse.data || { name: '' },
-    area: areaResponse.data || { name: '' }
+    return (
+      <SidebarClient
+        business={business}
+        buyerStatuses={processedBuyerStatuses}
+        currentUser={user}
+        className={className}
+      />
+    )
+
+  } else {
+    // Buyer view - show all businesses where user is a buyer
+    const { data: buyerStatuses } = await supabase
+      .from('buyer_status')
+      .select(`
+        id,
+        business_id,
+        status,
+        has_unread,
+        business:businesses (
+          id,
+          opportunity_name,
+          selling_price,
+          user_id,
+          category:business_categories(name),
+          area:areas(name)
+        )
+      `)
+      .eq('buyer_id', user.id)
+
+    const processedBuyerStatuses = buyerStatuses?.map(status => ({
+      id: status.id,
+      business_id: status.business_id,
+      buyer_id: user.id,
+      status: status.status,
+      has_unread: status.has_unread,
+      business: status.business
+    })) || []
+
+    return (
+      <SidebarClient
+        business={business}
+        buyerStatuses={processedBuyerStatuses}
+        currentUser={user}
+        className={className}
+        isBuyerView={true}
+      />
+    )
   }
-
-  return (
-    <SidebarClient
-      business={processedBusiness}
-      buyerStatuses={processedBuyerStatuses}
-      currentUser={user}
-      className={className}
-    />
-  )
 } 

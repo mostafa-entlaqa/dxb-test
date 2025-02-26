@@ -58,6 +58,9 @@
 }
 
 
+/* .no-scrollbar::-webkit-scrollbar {
+  display: none;
+} */
 
 @layer base {
   * {

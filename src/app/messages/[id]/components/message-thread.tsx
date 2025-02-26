@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -13,10 +13,10 @@ import { createInitialContact } from '@/app/actions/messages/create-contact'
 interface Message {
   id: string
   sender_id: string
-  receiver_id: string
   content: string
   created_at: string
   status: "sent" | "delivered" | "read"
+  receiver_id: string
 }
 
 
@@ -32,7 +32,15 @@ export function MessageThread({
   const [messages, setMessages] = useState<Message[]>([])
   const { isBusinessOwner, currentUser } = useMessages(businessId, buyerId)
   const [newMessage, setNewMessage] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages])
 
   // Only fetch messages when a conversation is selected
   useEffect(() => {
@@ -117,12 +125,15 @@ export function MessageThread({
   }
 
   return (
-    <div className="flex flex-col flex-1">
-      <ScrollArea className="flex-1 p-4">
+    <div className="flex flex-col h-full overflow-hidden">
+  {/* Messages container with normal scrolling */}
+  <div ref={scrollRef} className="flex-1 overflow-auto">
+    <div className="flex flex-col justify-end min-h-full">
+      <div className="p-4 space-y-4">
         {messages.map((message) => (
           <div 
             key={message.id} 
-            className={`flex mb-4 ${
+            className={`flex ${
               message.sender_id === currentUser?.id ? "justify-end" : "justify-start"
             }`}
           >
@@ -149,21 +160,26 @@ export function MessageThread({
             </div>
           </div>
         ))}
-      </ScrollArea>
-
-      <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
-        <BuyerTag />
-        <div className="flex mt-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 mr-2"
-          />
-          <Button type="submit">Send</Button>
-        </div>
-      </form>
+      </div>
     </div>
+  </div>
+
+  {/* Fixed input form at bottom */}
+  <div className="border-t border-border bg-background flex-shrink-0">
+    <form onSubmit={handleSendMessage} className="p-4">
+      <BuyerTag />
+      <div className="flex mt-2">
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          className="flex-1 mr-2"
+        />
+        <Button type="submit">Send</Button>
+      </div>
+    </form>
+  </div>
+</div>
   )
 }
 
