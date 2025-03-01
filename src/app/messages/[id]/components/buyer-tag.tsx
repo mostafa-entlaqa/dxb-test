@@ -7,101 +7,167 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { updateBuyerStatus } from "@/actions/user/messages/update-buyer-status"
+import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
-
-const tags = [
-  { value: "new", label: "New" },
-  { value: "qualified", label: "Qualified" },
-  { value: "negotiation", label: "Negotiation" },
-  { value: "won", label: "Won" },
-  { value: "lost", label: "Lost" },
-]
 
 interface BuyerTagProps {
   businessId: string
   buyerId: string
+  isLoading?: boolean
 }
 
-export function BuyerTag({ businessId, buyerId }: BuyerTagProps) {
+interface BuyerStatus {
+  id: string
+  status: string
+  buyer_id: string
+  buyer: {
+    id: string
+    email: string
+    full_name: string | null
+  }
+}
+
+const statusColors = {
+  New: "bg-blue-500",
+  Qualified: "bg-green-500",
+  Negotiation: "bg-yellow-500",
+  Won: "bg-purple-500",
+  Lost: "bg-red-500",
+} as const
+
+type Status = keyof typeof statusColors
+
+export function BuyerTag({ businessId, buyerId, isLoading = false }: BuyerTagProps) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
   const [loading, setLoading] = React.useState(false)
+  const [buyers, setBuyers] = React.useState<BuyerStatus[]>([])
+  const [selectedBuyer, setSelectedBuyer] = React.useState<string | null>(null)
   const supabase = createClientComponentClient()
   const router = useRouter()
 
-  // Load existing status
   React.useEffect(() => {
-    const loadStatus = async () => {
-      const { data } = await supabase
-        .from('buyer_status')
-        .select('status')
-        .eq('business_id', businessId)
-        .eq('buyer_id', buyerId)
-        .single()
+    const loadBuyers = async () => {
+      setLoading(true)
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-      if (data?.status) {
-        setValue(data.status)
+        // First get buyer statuses
+        const { data: buyerStatuses } = await supabase
+          .from('buyer_status')
+          .select('*')
+          .eq('business_id', businessId)
+          // Filter out the current user (seller)
+          .neq('buyer_id', user.id)
+
+        if (buyerStatuses && buyerStatuses.length > 0) {
+          // Get user details for all buyers
+          const { data: users } = await supabase
+            .from('users')
+            .select('id, email, full_name')
+            .in('id', buyerStatuses.map(status => status.buyer_id))
+
+          if (users) {
+            // Map users to their buyer statuses
+            const buyersWithDetails = buyerStatuses.map(status => {
+              const user = users.find(u => u.id === status.buyer_id)
+              return {
+                id: status.id,
+                status: status.status,
+                buyer_id: status.buyer_id,
+                buyer: {
+                  id: user?.id || status.buyer_id,
+                  email: user?.email || '',
+                  full_name: user?.full_name
+                }
+              }
+            })
+            setBuyers(buyersWithDetails)
+
+            // Set initial selected buyer from URL
+            if (buyerId) {
+              const currentBuyer = buyersWithDetails.find(b => b.buyer_id === buyerId)
+              if (currentBuyer) {
+                setSelectedBuyer(currentBuyer.buyer_id)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading buyers:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
-    loadStatus()
+    loadBuyers()
   }, [businessId, buyerId])
 
-  // Update status using server action
-  const handleStatusUpdate = async (newValue: string) => {
-    try {
-      setLoading(true)
-      await updateBuyerStatus(businessId, buyerId, newValue)
-      setValue(newValue)
-      setOpen(false)
-      router.refresh() // Refresh the page to show updated status
-    } catch (error) {
-      console.error('Error updating status:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleBuyerSelect = (buyerId: string) => {
+    setSelectedBuyer(buyerId)
+    setOpen(false)
+    // Navigate to the selected buyer's chat using their UUID
+    router.push(`/messages/${businessId}?buyer=${buyerId}`)
   }
 
+  const currentBuyer = buyers.find(b => b.buyer_id === selectedBuyer)
+
   return (
-    <div className="mb-4">
+    <div className="mb-4 w-full max-w-[300px]">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
             role="combobox" 
             aria-expanded={open} 
-            className="w-[200px] justify-between"
-            disabled={loading}
+            className="w-full justify-between"
+            disabled={loading || isLoading}
           >
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Updating...</span>
+                <span>Loading buyers...</span>
               </>
             ) : (
               <>
-                {value ? tags.find((tag) => tag.value === value)?.label : "Set buyer status..."}
+                {currentBuyer ? (
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="truncate">{currentBuyer.buyer.full_name || currentBuyer.buyer.email}</span>
+                    <Badge className={cn("ml-auto shrink-0", statusColors[currentBuyer.status as Status])}>
+                      {currentBuyer.status}
+                    </Badge>
+                  </div>
+                ) : (
+                  "Select buyer..."
+                )}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[300px] p-0">
           <Command>
-            <CommandInput placeholder="Search status..." />
+            <CommandInput placeholder="Search buyers..." />
             <CommandList>
-              <CommandEmpty>No status found.</CommandEmpty>
+              <CommandEmpty>No buyers found.</CommandEmpty>
               <CommandGroup>
-                {tags.map((tag) => (
+                {buyers.map((buyer) => (
                   <CommandItem
-                    key={tag.value}
-                    onSelect={(currentValue) => {
-                      handleStatusUpdate(currentValue === value ? "" : currentValue)
-                    }}
+                    key={buyer.buyer_id}
+                    onSelect={() => handleBuyerSelect(buyer.buyer_id)}
+                    className="flex items-center justify-between"
                   >
-                    <Check className={cn("mr-2 h-4 w-4", value === tag.value ? "opacity-100" : "opacity-0")} />
-                    {tag.label}
+                    <div className="flex items-center gap-2 w-full">
+                      <Check className={cn(
+                        "h-4 w-4 shrink-0",
+                        selectedBuyer === buyer.buyer_id ? "opacity-100" : "opacity-0"
+                      )} />
+                      <span className="truncate">{buyer.buyer.full_name || buyer.buyer.email}</span>
+                      <Badge className={cn("ml-auto shrink-0", statusColors[buyer.status as Status])}>
+                        {buyer.status}
+                      </Badge>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>

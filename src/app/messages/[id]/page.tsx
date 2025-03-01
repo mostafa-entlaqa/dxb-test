@@ -1,3 +1,5 @@
+
+
 import { Suspense } from 'react'
 import { BusinessOpportunityHeader } from "./components/business-opportunity-header"
 import { MessageThread } from "./components/message-thread"
@@ -38,7 +40,6 @@ export default async function MessagesPage({ params, searchParams }: {
     getAreaById(business.area_id)
   ])
 
-
   const processedBusiness = {
     ...business,
     category: categoryResponse.data || { name: '' },
@@ -59,19 +60,22 @@ export default async function MessagesPage({ params, searchParams }: {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
-    <Suspense fallback={<div className="w-64" />}>
-      
-      <SidebarContainer businessId={params.id} business={processedBusiness} className="w-64 border-r border-border" />
-    </Suspense>
-    <div className="flex flex-col flex-1">
-      <BusinessOpportunityHeader business={processedBusiness} className="border-b border-border" />
-      <MessageThread 
-        businessId={params.id} 
-        buyerId={buyerId} 
-        initialMessages={initialMessages || []}
-        className="flex-1" 
-      />
+      <Suspense fallback={<div className="w-64" />}>
+        <SidebarContainer 
+          businessId={params.id} 
+          business={processedBusiness} 
+          className="w-64 border-r border-border" 
+        />
+      </Suspense>
+      <div className="flex flex-col flex-1">
+        <BusinessOpportunityHeader business={processedBusiness} className="border-b border-border" />
+        <MessageThread 
+          businessId={params.id} 
+          buyerId={buyerId} 
+          initialMessages={initialMessages || []}
+          className="flex-1" 
+        />
+      </div>
     </div>
-  </div>
   )
 }

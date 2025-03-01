@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, MapPin, Phone, Clock } from 'lucide-react'
@@ -13,13 +14,12 @@ const footerLinks = [
 ]
 
 export default function Footer() {
+  const pathname = usePathname()
 
-  // Check if the current pathname includes '/messages'
-  // const shouldHideFooter = window.location.pathname.startsWith('/messages');
-
-  // if (shouldHideFooter) {
-  //   return null; // Do not render the footer
-  // }
+  // Hide footer if the pathname starts with "/messages/"
+  if (pathname.startsWith('/messages/')) {
+    return null
+  }
 
   return (
     <footer className="bg-background border-t">
@@ -111,4 +111,3 @@ export default function Footer() {
     </footer>
   )
 }
-
