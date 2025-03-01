@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -20,6 +20,13 @@ interface Message {
   receiver_id: string
 }
 
+interface User {
+  id: string
+  email: string
+  full_name: string | null
+  profile_pic_url: string | null
+}
+
 export function MessageThread({ 
   businessId, 
   buyerId,
@@ -36,7 +43,33 @@ export function MessageThread({
   const [sending, setSending] = useState(false)
   const { isBusinessOwner, currentUser } = useMessages(businessId, buyerId)
   const [newMessage, setNewMessage] = useState('')
+  const [users, setUsers] = useState<Record<string, User>>({})
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Load user profiles
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!currentUser?.id || !buyerId) return
+      
+      const supabase = getClientSupabase()
+      const userIds = new Set([currentUser.id, buyerId])
+      
+      const { data } = await supabase
+        .from('users')
+        .select('id, email, full_name, profile_pic_url')
+        .in('id', Array.from(userIds))
+
+      if (data) {
+        const userMap = data.reduce((acc, user) => ({
+          ...acc,
+          [user.id]: user
+        }), {})
+        setUsers(userMap)
+      }
+    }
+
+    loadUsers()
+  }, [currentUser?.id, buyerId])
 
   // Load messages for selected buyer
   useEffect(() => {
@@ -146,36 +179,40 @@ export function MessageThread({
             </div>
           ) : (
             <div className="p-4 space-y-4">
-              {messages.map((message) => (
-                <div 
-                  key={message.id} 
-                  className={`flex ${
-                    message.sender_id === currentUser?.id ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div className={`flex items-start ${
-                    message.sender_id === currentUser?.id ? "flex-row-reverse" : "flex-row"
-                  }`}>
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback>
-                        {message.sender_id === currentUser?.id ? 'Me' : 'Other'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className={`mx-2 p-3 rounded-lg ${
-                      message.sender_id === currentUser?.id
-                        ? "bg-primary text-primary-foreground rounded-tr-none"
-                        : "bg-muted text-muted-foreground rounded-tl-none"
-                    }`}>
-                      <p className="text-sm">{message.content}</p>
-                      <div className="flex items-center justify-end space-x-1 mt-1">
-                        <span className="text-xs opacity-70">
-                          {new Date(message.created_at).toLocaleTimeString()}
-                        </span>
+              {messages.map((message) => {
+                const isCurrentUser = message.sender_id === currentUser?.id
+                const user = users[message.sender_id]
+                return (
+                  <div 
+                    key={message.id} 
+                    className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={`flex items-start ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}>
+                      <Avatar className="w-8 h-8 border overflow-hidden">
+                        {user?.profile_pic_url ? (
+                          <AvatarImage src={user.profile_pic_url} alt={user.full_name || user.email} />
+                        ) : (
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {(user?.full_name?.[0] || user?.email[0] || 'U').toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className={`mx-2 p-3 rounded-lg ${
+                        isCurrentUser
+                          ? "bg-primary text-primary-foreground rounded-tr-none"
+                          : "bg-muted text-muted-foreground rounded-tl-none"
+                      }`}>
+                        <p className="text-sm">{message.content}</p>
+                        <div className="flex items-center justify-end space-x-1 mt-1">
+                          <span className="text-xs opacity-70">
+                            {new Date(message.created_at).toLocaleTimeString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
