@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { BuyerTag } from "./buyer-tag"
 import { useMessages } from "@/hooks/useMessages"
-import { createInitialContact } from '@/app/actions/messages/create-contact'
+import { createInitialContact } from '@/actions/user/messages/create-contact'
 import {getClientSupabase} from '@/lib/supabase/client'
 
 interface Message {

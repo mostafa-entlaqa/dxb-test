@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { BusinessDetails, BuyerStatus } from '../type'
+import Buyer from './buyer'
 
 
 
@@ -85,31 +86,8 @@ export function SidebarClient({
             </div>
           </div>
         ) : (
-          <>
-            <Avatar className="w-10 h-10 mr-3">
-              {status.buyer.profile_pic_url ? (
-                <Image
-                  src={status.buyer.profile_pic_url}
-                  alt={status.buyer.full_name}
-                  width={40}
-                  height={40}
-                  className="object-cover"
-                />
-              ) : (
-                <AvatarFallback>
-                  {status.buyer.full_name?.[0] || status.buyer.email[0]}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div className="flex-1">
-              <div className="font-medium">
-                {status.buyer.full_name || status.buyer.email}
-              </div>
-              <Badge className={`${statusColors[status.status as keyof typeof statusColors]} text-white`}>
-                {status.status}
-              </Badge>
-            </div>
-          </>
+      
+          <Buyer status={status} />
         )}
       </div>
     ))}
