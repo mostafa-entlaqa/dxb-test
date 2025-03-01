@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getClientSupabase } from '@/lib/supabase/client'
 
 export default function ConfirmPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClientComponentClient()
+  const supabase = getClientSupabase() /// i change to getClientSupabase() because createClientComponentClient() is not working
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {

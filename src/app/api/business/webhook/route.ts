@@ -5,7 +5,8 @@ import { headers } from 'next/headers'
 import { getAdminSupabase } from '@/lib/supabase/admin'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-     apiVersion: '2024-12-18.acacia'
+        // @ts-ignore
+     apiVersion: '2025-02-24.acacia'
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!

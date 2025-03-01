@@ -11,7 +11,7 @@ type BusinessType = {
 
 export const getUserList = async () => {
 
-    const supabase = await getServerSupabase()
+    const supabase =  getServerSupabase()
     const { data: { user } } = await supabase.auth.getUser()
 
     // Check if user and user.id are valid

@@ -13,11 +13,13 @@ const footerLinks = [
 ]
 
 export default function Footer() {
-  const shouldHideFooter = window.location.pathname.includes('/messages');
 
-  if(shouldHideFooter) {
-    return null
-  }
+  // Check if the current pathname includes '/messages'
+  // const shouldHideFooter = window.location.pathname.startsWith('/messages');
+
+  // if (shouldHideFooter) {
+  //   return null; // Do not render the footer
+  // }
 
   return (
     <footer className="bg-background border-t">

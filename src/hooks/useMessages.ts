@@ -1,55 +1,29 @@
-import { useEffect, useState, useCallback } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/navigation'
+'use client'
 
-interface Message {
-  id: string
-  content: string
-  sender_id: string
-  receiver_id: string
-  created_at: string
-  status: 'sent' | 'delivered' | 'read'
-}
+import { useState, useEffect } from 'react'
+import { getClientSupabase } from '@/lib/supabase/client'
+import { User } from '@supabase/supabase-js'
 
-interface User {
-  id: string
-  email: string
+interface UserStatus {
+  currentUser: User | null
+  isBusinessOwner: boolean
 }
 
 export function useMessages(businessId: string, buyerId: string | null) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [isBusinessOwner, setIsBusinessOwner] = useState(false)
-  const supabase = createClientComponentClient()
-  const router = useRouter()
+  const [userStatus, setUserStatus] = useState<UserStatus>({ 
+    currentUser: null, 
+    isBusinessOwner: false 
+  })
 
-  // Memoize fetch functions to prevent recreation
-  const fetchMessages = useCallback(async () => {
-    if (!currentUser) return
-
-    let query = supabase
-      .from('messages')
-      .select('*')
-      .eq('business_id', businessId)
-
-    if (isBusinessOwner && buyerId) {
-      query = query.or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
-    } else {
-      query = query.or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-    }
-
-    const { data } = await query.order('created_at', { ascending: true })
-    if (data) setMessages(data)
-  }, [businessId, currentUser, isBusinessOwner, buyerId])
-
-  // Initialize user and business owner status
+  // Initialize user status
   useEffect(() => {
     let mounted = true
+    const supabase = getClientSupabase()
 
-    const initializeUser = async () => {
+    const initUserStatus = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user || !mounted) return
+        if (!mounted || !user) return
 
         const { data: business } = await supabase
           .from('businesses')
@@ -58,56 +32,35 @@ export function useMessages(businessId: string, buyerId: string | null) {
           .single()
 
         if (mounted) {
-          setCurrentUser(user)
-          setIsBusinessOwner(business?.user_id === user.id)
+          setUserStatus({
+            currentUser: user,
+            isBusinessOwner: business?.user_id === user.id
+          })
         }
       } catch (error) {
-        console.error('Error initializing user:', error)
+        console.error('Error initializing user status:', error)
       }
     }
 
-    initializeUser()
-    return () => { mounted = false }
-  }, [businessId])
-
-  // Handle messages fetch and real-time updates
-  useEffect(() => {
-    if (!currentUser) return
-    let mounted = true
-
-    fetchMessages()
-
-    // Single channel for all message updates
-    const channel = supabase.channel(`messages_${businessId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `business_id=eq.${businessId}`
-        },
-        (payload) => {
-          if (!mounted) return
-          const newMessage = payload.new as Message
-
-          // Only update if message is relevant to current view
-          const isRelevantMessage = isBusinessOwner
-            ? buyerId && (newMessage.sender_id === buyerId || newMessage.receiver_id === buyerId)
-            : newMessage.sender_id === currentUser.id || newMessage.receiver_id === currentUser.id
-
-          if (isRelevantMessage) {
-            setMessages(current => [...current, newMessage])
-          }
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (mounted && session?.user) {
+          initUserStatus()
         }
-      )
-      .subscribe()
+      }
+    )
+
+    initUserStatus()
 
     return () => {
       mounted = false
-      supabase.removeChannel(channel)
+      subscription.unsubscribe()
     }
-  }, [businessId, currentUser, isBusinessOwner, buyerId, fetchMessages])
+  }, [businessId])
 
-  return { messages, isBusinessOwner, currentUser }
+  return {
+    currentUser: userStatus.currentUser,
+    isBusinessOwner: userStatus.isBusinessOwner
+  }
 } 
