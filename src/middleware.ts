@@ -55,6 +55,14 @@ export const config = {
     '/complete-profile',
     '/login',
     '/signup',
-    '/forgot-password'
+    '/forgot-password',
+    '/buy/:path*',
+    '/sell/:path*',
+    '/business/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/my-listings/:path*',
+    
+    
   ],
 } 
