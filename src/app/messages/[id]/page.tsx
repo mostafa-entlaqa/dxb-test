@@ -1,5 +1,3 @@
-
-
 import { Suspense } from 'react'
 import { BusinessOpportunityHeader } from "./components/business-opportunity-header"
 import { MessageThread } from "./components/message-thread"
@@ -55,7 +53,7 @@ export default async function MessagesPage({ params, searchParams }: {
     .from('messages')
     .select('*')
     .eq('business_id', params.id)
-    .or(`sender_id.eq.${buyerId || user.id},receiver_id.eq.${buyerId || user.id}`)
+    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order('created_at', { ascending: true })
 
   return (
@@ -72,7 +70,7 @@ export default async function MessagesPage({ params, searchParams }: {
         <MessageThread 
           businessId={params.id} 
           buyerId={buyerId} 
-          initialMessages={initialMessages || []}
+          initialMessages={initialMessages ? initialMessages : []}
           className="flex-1" 
         />
       </div>

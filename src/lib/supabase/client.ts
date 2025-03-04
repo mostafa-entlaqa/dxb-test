@@ -5,4 +5,4 @@ import type { Database } from '@/types/supabase'
 
 export const getClientSupabase = () => {
   return createClientComponentClient<Database>()
-} 
+}

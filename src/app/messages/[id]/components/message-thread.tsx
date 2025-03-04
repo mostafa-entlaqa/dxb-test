@@ -14,10 +14,10 @@ import { getClientSupabase } from "@/lib/supabase/client"
 interface Message {
   id: string
   sender_id: string
+  receiver_id: string
   content: string
   created_at: string
-  status: "sent" | "delivered" | "read"
-  receiver_id: string
+  business_id: number
 }
 
 interface User {
@@ -52,7 +52,18 @@ export function MessageThread({
       if (!currentUser?.id || !buyerId) return
       
       const supabase = getClientSupabase()
-      const userIds = new Set([currentUser.id, buyerId])
+      
+      // Get the business owner's ID first
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('user_id')
+        .eq('id', businessId)
+        .single()
+      
+      if (!business) return
+
+      // Load both buyer and seller profiles
+      const userIds = new Set([currentUser.id, buyerId, business.user_id].filter(Boolean))
       
       const { data } = await supabase
         .from('users')
@@ -69,10 +80,12 @@ export function MessageThread({
     }
 
     loadUsers()
-  }, [currentUser?.id, buyerId])
+  }, [currentUser?.id, buyerId, businessId])
 
-  // Load messages for selected buyer
+  // Load messages and handle real-time updates
   useEffect(() => {
+    let mounted = true
+    
     const loadMessages = async () => {
       if (!currentUser?.id || !buyerId) return
       setLoading(true)
@@ -82,66 +95,64 @@ export function MessageThread({
           .from('messages')
           .select('*')
           .eq('business_id', businessId)
-          .or(`and(sender_id.eq.${buyerId},receiver_id.eq.${currentUser.id}),and(sender_id.eq.${currentUser.id},receiver_id.eq.${buyerId})`)
+          .or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
           .order('created_at', { ascending: true })
 
-        if (data) {
+        if (mounted && data) {
           setMessages(data)
+          setTimeout(() => {
+            if (scrollRef.current) {
+              scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            }
+          }, 100)
         }
       } catch (error) {
         console.error('Error loading messages:', error)
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     }
 
-    loadMessages()
-  }, [businessId, buyerId, currentUser?.id])
-
-  // Handle real-time updates
-  useEffect(() => {
-    if (!currentUser?.id || !buyerId) return
-    
+    // Set up real-time subscriptions
     const supabase = getClientSupabase()
-    const channel = supabase.channel(`messages_${businessId}_${currentUser.id}_${buyerId}`)
+    
+    // Channel for messages sent by current user
+    const senderChannel = supabase
+      .channel('sender-' + currentUser?.id)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
-        filter: `business_id=eq.${businessId}`,
-      }, (payload) => {
-        const newMessage = payload.new as Message
-        // Only add message if it's between current user and selected buyer
-        if ((newMessage.sender_id === currentUser.id && newMessage.receiver_id === buyerId) ||
-            (newMessage.sender_id === buyerId && newMessage.receiver_id === currentUser.id)) {
-          setMessages(current => [...current, newMessage])
-        }
+        filter: `sender_id=eq.${currentUser?.id}`,
+      }, () => {
+        if (!mounted) return
+        loadMessages()
       })
       .subscribe()
 
+    // Channel for messages received by current user
+    const receiverChannel = supabase
+      .channel('receiver-' + currentUser?.id)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${currentUser?.id}`,
+      }, () => {
+        if (!mounted) return
+        loadMessages()
+      })
+      .subscribe()
+
+    // Load initial messages
+    loadMessages()
+
     return () => {
-      supabase.removeChannel(channel)
+      mounted = false
+      senderChannel.unsubscribe()
+      receiverChannel.unsubscribe()
     }
-  }, [businessId, currentUser?.id, buyerId])
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [messages])
-
-  // Show placeholder for business owner with no selected buyer
-  if (isBusinessOwner && !buyerId) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        <div className="text-center">
-          <p className="mb-4">Select a buyer to view messages</p>
-          <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={loading} />
-        </div>
-      </div>
-    )
-  }
+  }, [businessId, buyerId, currentUser?.id])
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,19 +164,56 @@ export function MessageThread({
       // Create initial contact if needed
       await createInitialContact(businessId)
 
-      await supabase.from('messages').insert({
+      const messageData = {
         business_id: parseInt(businessId),
         sender_id: currentUser.id,
         receiver_id: buyerId,
-        content: newMessage,
-      }).throwOnError()
+        content: newMessage.trim()
+      }
 
+      // Use upsert to ensure message is added
+      const { error } = await supabase
+        .from('messages')
+        .upsert(messageData)
+        .select()
+        .single()
+
+      if (error) throw error
       setNewMessage('')
+      
+      // Force reload messages after sending
+      const { data } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('business_id', businessId)
+        .or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
+        .order('created_at', { ascending: true })
+
+      if (data) {
+        setMessages(data)
+        setTimeout(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+          }
+        }, 100)
+      }
     } catch (error) {
       console.error('Error sending message:', error)
     } finally {
       setSending(false)
     }
+  }
+
+  // Show placeholder for business owner with no selected buyer
+  if (isBusinessOwner && !buyerId) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+        <div className="text-center">
+          <p className="mb-4">Select a buyer to view messages</p>
+          <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={loading} />
+        </div>
+      </div>
+    )
   }
 
   return (
