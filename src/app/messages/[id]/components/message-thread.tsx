@@ -116,31 +116,25 @@ export function MessageThread({
     // Set up real-time subscriptions
     const supabase = getClientSupabase()
     
-    // Channel for messages sent by current user
-    const senderChannel = supabase
-      .channel('sender-' + currentUser?.id)
+    const channel = supabase
+      .channel(`messages-${businessId}`)
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'messages',
-        filter: `sender_id=eq.${currentUser?.id}`,
-      }, () => {
+        filter: `business_id=eq.${businessId}`,
+      }, (payload) => {
         if (!mounted) return
-        loadMessages()
-      })
-      .subscribe()
-
-    // Channel for messages received by current user
-    const receiverChannel = supabase
-      .channel('receiver-' + currentUser?.id)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `receiver_id=eq.${currentUser?.id}`,
-      }, () => {
-        if (!mounted) return
-        loadMessages()
+        
+        if (payload.eventType === 'INSERT') {
+          const newMessage = payload.new as Message
+          setMessages(prevMessages => [...prevMessages, newMessage])
+          setTimeout(() => {
+            if (scrollRef.current) {
+              scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            }
+          }, 100)
+        }
       })
       .subscribe()
 
@@ -149,8 +143,7 @@ export function MessageThread({
 
     return () => {
       mounted = false
-      senderChannel.unsubscribe()
-      receiverChannel.unsubscribe()
+      channel.unsubscribe()
     }
   }, [businessId, buyerId, currentUser?.id])
 
@@ -171,32 +164,12 @@ export function MessageThread({
         content: newMessage.trim()
       }
 
-      // Use upsert to ensure message is added
       const { error } = await supabase
         .from('messages')
-        .upsert(messageData)
-        .select()
-        .single()
+        .insert(messageData)
 
       if (error) throw error
       setNewMessage('')
-      
-      // Force reload messages after sending
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('business_id', businessId)
-        .or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
-        .order('created_at', { ascending: true })
-
-      if (data) {
-        setMessages(data)
-        setTimeout(() => {
-          if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-          }
-        }, 100)
-      }
     } catch (error) {
       console.error('Error sending message:', error)
     } finally {
