@@ -46,6 +46,13 @@ export function MessageThread({
   const [users, setUsers] = useState<Record<string, User>>({})
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    setLoading(true)
+    setTimeout(() => {
+      setLoading(false)
+    }, 1000)
+  }, [])
+
   // Load user profiles
   useEffect(() => {
     const loadUsers = async () => {
@@ -88,7 +95,6 @@ export function MessageThread({
     
     const loadMessages = async () => {
       if (!currentUser?.id || !buyerId) return
-      setLoading(true)
       try {
         const supabase = getClientSupabase()
         const { data } = await supabase
@@ -108,8 +114,6 @@ export function MessageThread({
         }
       } catch (error) {
         console.error('Error loading messages:', error)
-      } finally {
-        if (mounted) setLoading(false)
       }
     }
 
@@ -183,7 +187,7 @@ export function MessageThread({
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
         <div className="text-center">
           <p className="mb-4">Select a buyer to view messages</p>
-          <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={loading} />
+          <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={false} />
         </div>
       </div>
     )
@@ -194,48 +198,51 @@ export function MessageThread({
       {/* Messages container with normal scrolling */}
       <div ref={scrollRef} className="flex-1 overflow-auto">
         <div className="flex flex-col justify-end min-h-full">
-          {loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
+         
             <div className="p-4 space-y-4">
-              {messages.map((message) => {
-                const isCurrentUser = message.sender_id === currentUser?.id
-                const user = users[message.sender_id]
-                return (
-                  <div 
-                    key={message.id} 
-                    className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
-                  >
-                    <div className={`flex items-start ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}>
-                      <Avatar className="w-8 h-8 border overflow-hidden">
-                        {user?.profile_pic_url ? (
-                          <AvatarImage src={user.profile_pic_url} alt={user.full_name || user.email} />
-                        ) : (
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {(user?.full_name?.[0] || user?.email[0] || 'U').toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className={`mx-2 p-3 rounded-lg ${
-                        isCurrentUser
-                          ? "bg-primary text-primary-foreground rounded-tr-none"
-                          : "bg-muted text-muted-foreground rounded-tl-none"
-                      }`}>
-                        <p className="text-sm">{message.content}</p>
-                        <div className="flex items-center justify-end space-x-1 mt-1">
-                          <span className="text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString()}
-                          </span>
+              {loading ? (
+                <div className="flex  items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading...
+                </div>
+              ) : (
+                messages.map((message) => {
+                  const isCurrentUser = message.sender_id === currentUser?.id
+                  const user = users[message.sender_id]
+                  return (
+                    <div 
+                      key={message.id} 
+                      className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className={`flex items-start ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}>
+                        <Avatar className="w-8 h-8 border overflow-hidden">
+                          {user?.profile_pic_url ? (
+                            <AvatarImage src={user.profile_pic_url} alt={user.full_name || user.email} />
+                          ) : (
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {(user?.full_name?.[0] || user?.email[0] || 'U').toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className={`mx-2 p-3 rounded-lg ${
+                          isCurrentUser
+                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                            : "bg-muted text-muted-foreground rounded-tl-none"
+                        }`}>
+                          <p className="text-sm">{message.content}</p>
+                          <div className="flex items-center justify-end space-x-1 mt-1">
+                            <span className="text-xs opacity-70">
+                              {new Date(message.created_at).toLocaleTimeString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
-          )}
+          
         </div>
       </div>
 
@@ -243,7 +250,7 @@ export function MessageThread({
       <div className="border-t border-border bg-background flex-shrink-0">
         <form onSubmit={handleSendMessage} className="p-4">
           {isBusinessOwner && (
-            <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={loading} />
+            <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={false} />
           )}
           <div className="flex mt-2">
             <Input
@@ -251,9 +258,9 @@ export function MessageThread({
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
               className="flex-1 mr-2"
-              disabled={loading || sending}
+              disabled={sending}
             />
-            <Button type="submit" disabled={loading || sending}>
+            <Button type="submit" disabled={sending}>
               {sending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
