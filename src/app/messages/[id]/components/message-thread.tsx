@@ -38,7 +38,7 @@ export function MessageThread({
   initialMessages: Message[]
   className?: string 
 }) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const { isBusinessOwner, currentUser } = useMessages(businessId, buyerId)
@@ -50,6 +50,7 @@ export function MessageThread({
     setLoading(true)
     setTimeout(() => {
       setLoading(false)
+      setMessages(initialMessages)
     }, 1000)
   }, [])
 
