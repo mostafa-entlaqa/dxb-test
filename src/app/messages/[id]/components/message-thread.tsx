@@ -229,55 +229,21 @@ export function MessageThread({
       // Create initial contact if needed
       await createInitialContact(businessId)
 
-      // Explicitly set read_at to null when sending - don't include the field at all
-      // to let the database default handle it or set it to null
+      // Send message with read_at explicitly set to null
       const messageData = {
         business_id: parseInt(businessId),
         sender_id: currentUser.id,
         receiver_id: buyerId,
-        content: newMessage.trim()
-        // Don't include read_at here, let the database handle it with default value
+        content: newMessage.trim(),
+        read_at: null // Explicitly set to null when sending
       }
 
-      // 1. First mark all unread messages from the receiver as read
-      const { data: unreadMessages, error: fetchError } = await supabase
-        .from('messages')
-        .select('id')
-        .eq('business_id', parseInt(businessId))
-        .eq('sender_id', buyerId)
-        .eq('receiver_id', currentUser.id)
-        .is('read_at', null);
-      
-      if (fetchError) {
-        console.error('Error fetching unread messages:', fetchError);
-      } else if (unreadMessages && unreadMessages.length > 0) {
-        // Mark these messages as read in the database
-        const messageIds = unreadMessages.map(msg => msg.id);
-        const { error: updateError } = await supabase
-          .from('messages')
-          .update({ read_at: new Date().toISOString() })
-          .in('id', messageIds);
-        
-        if (updateError) {
-          console.error('Error updating read status:', updateError);
-        } else {
-          // Update the frontend state to reflect these changes
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              messageIds.includes(msg.id) 
-                ? { ...msg, read_at: new Date().toISOString() } 
-                : msg
-            )
-          );
-        }
-      }
-
-      // 2. Then send the new message
-      const { error } = await supabase
+      const { error: sendError } = await supabase
         .from('messages')
         .insert(messageData)
 
-      if (error) throw error
+      if (sendError) throw sendError
+
       setNewMessage('')
     } catch (error) {
       console.error('Error sending message:', error)
@@ -300,25 +266,16 @@ export function MessageThread({
 
   // Add a MessageStatus component to display read status
   function MessageStatus({ message, currentUserId }: { message: Message, currentUserId: string }) {
-    // Only show status for messages sent by the current user
-    if (message.sender_id !== currentUserId) {
-      return null;
-    }
+    if (message.sender_id !== currentUserId) return null;
 
     return (
-      <div className="flex items-center justify-end text-xs text-muted-foreground mt-1">
+      <span className="ml-2 flex items-center text-xs text-gray-500">
         {message.read_at ? (
-          <div className="flex items-center space-x-1">
-            <CheckCheck size={12} className="text-green-500" />
-            <span>Read</span>
-          </div>
+          <CheckCheck className="h-4 w-4 text-green-500" />
         ) : (
-          <div className="flex items-center space-x-1">
-            <Check size={12} />
-            <span>Sent</span>
-          </div>
+          <Check className="h-4 w-4" />
         )}
-      </div>
+      </span>
     );
   }
 
@@ -336,42 +293,40 @@ export function MessageThread({
                 </div>
               ) : (
                 messages.map((message) => {
-                  const isCurrentUser = message.sender_id === currentUser?.id;
-                  const user = users[message.sender_id];
-                  
+                  const isCurrentUser = currentUser?.id === message.sender_id
+                  const messageUser = users[message.sender_id]
+
                   return (
-                    <div 
-                      key={message.id} 
+                    <div
+                      key={message.id}
                       className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}
                     >
-                      <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} max-w-[80%]`}>
-                        {/* Show avatar for both current user and other users */}
-                        <Avatar className="h-8 w-8 mx-2">
-                          {user?.profile_pic_url && (
-                            <AvatarImage src={user.profile_pic_url} alt={user.full_name || user.email} />
-                          )}
+                      <div className={`flex items-start ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} gap-2`}>
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={messageUser?.profile_pic_url || undefined} />
                           <AvatarFallback>
-                            {(user?.full_name?.[0] || user?.email?.[0] || '?').toUpperCase()}
+                            {messageUser?.full_name?.charAt(0) || messageUser?.email?.charAt(0) || '?'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div 
-                            className={`rounded-lg py-2 px-3 ${
-                              isCurrentUser 
-                                ? 'bg-primary text-white rounded-tr-none' 
-                                : 'bg-muted rounded-tl-none'
-                            }`}
-                          >
-                            {message.content}
+                        <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">
+                              {messageUser?.full_name || messageUser?.email?.split('@')[0]}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(message.created_at).toLocaleTimeString()}
+                            </span>
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1 flex justify-between">
-                            <div>
-                              {new Date(message.created_at).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit'
-                              })}
+                          <div className="flex items-end gap-2">
+                            <div
+                              className={`rounded-lg px-4 py-2 max-w-md break-words ${
+                                isCurrentUser
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted'
+                              }`}
+                            >
+                              {message.content}
                             </div>
-                            {/* Add read receipt status */}
                             {currentUser && <MessageStatus message={message} currentUserId={currentUser.id} />}
                           </div>
                         </div>
