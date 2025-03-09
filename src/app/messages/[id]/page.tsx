@@ -5,6 +5,7 @@ import { SidebarContainer } from "./components/sidebar-container"
 import { getServerSupabase } from '@/lib/supabase/utils'
 import { getCategoryById } from '@/actions/user/bussiness-list/get-category-by-id'
 import { getAreaById } from '@/actions/user/bussiness-list/get-area-by-id'
+import { redirect } from 'next/navigation'
 
 export default async function MessagesPage({ params, searchParams }: { 
   params: { id: string },
@@ -31,6 +32,23 @@ export default async function MessagesPage({ params, searchParams }: {
     .single()
 
   if (!business) return null
+
+  // Check if user has access to messages
+  // Business owners always have access
+  if (business.user_id !== user.id) {
+    // Check if buyer has unlocked this business
+    const { data: unlockedBusiness } = await supabase
+      .from('unlocked_businesses')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('business_id', params.id)
+      .single()
+
+    // If not unlocked, redirect to business page
+    if (!unlockedBusiness) {
+      redirect(`/buy/${params.id}`)
+    }
+  }
 
   // Get category and area data
   const [categoryResponse, areaResponse] = await Promise.all([
