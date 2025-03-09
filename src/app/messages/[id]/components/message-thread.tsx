@@ -182,28 +182,12 @@ export function MessageThread({
       if (document.visibilityState === 'visible' && currentUser?.id && buyerId) {
         const supabase = getClientSupabase()
         
-        // Get the business owner's ID first to determine if current user is seller
-        const { data: business } = await supabase
-          .from('businesses')
-          .select('user_id')
-          .eq('id', businessId)
-          .single()
-
-        if (!business) return
-
-        // Only proceed if:
-        // 1. Current user is business owner and message is from buyer
-        // 2. Current user is buyer and message is from business owner
-        const isBusinessOwner = business.user_id === currentUser.id
-        const senderId = isBusinessOwner ? buyerId : business.user_id
-
-        // Mark unread messages where current user is the receiver AND message is from the other party
+        // Mark unread messages where current user is the receiver
         const { data: unreadMessages } = await supabase
           .from('messages')
           .select('id')
           .eq('business_id', businessId)
           .eq('receiver_id', currentUser.id)
-          .eq('sender_id', senderId)
           .is('read_at', null)
 
         if (unreadMessages && unreadMessages.length > 0) {
