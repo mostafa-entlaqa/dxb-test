@@ -13,34 +13,27 @@ import FinancialsWidget from "./FinancialsWidget"
 import AIAnalysis from "./AIAnalysis"
 import { Business, Category, Area } from "../../type"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 
 interface ListingPreviewProps {
   business: Business
   category: Category
   area: Area
-  initialUnlockStatus: boolean
+  aiDataResponse: any
   initialUnlockStatusAi: boolean
-  aiDataResponse: {
-    strength: number
-    deepAnalysis: {
-      business_overview: string
-      deal_assessment: string
-      financial_analysis: string
-      market_overview: string
-      standard_ai_disclaimer: string
-    }
-  } | null
+  initialUnlockStatus: boolean
   userCredits: number
   aiUserCredits: number
+  children?: React.ReactNode
 }
 
 export default function ListingPreview({
   business,
   category,
   area,
-  initialUnlockStatus,
-  initialUnlockStatusAi,
   aiDataResponse,
+  initialUnlockStatusAi,
+  initialUnlockStatus,
   userCredits: initialCredits,
   aiUserCredits: initialAiCredits
 }: ListingPreviewProps) {
@@ -52,7 +45,7 @@ export default function ListingPreview({
   const [showAIAnalysis, setShowAIAnalysis] = useState(!!aiDataResponse)
   const [aiData, setAiData] = useState(aiDataResponse)
   const [businessData, setBusinessData] = useState(business)
-
+  const router = useRouter()
   console.log('initialAiCredits', initialAiCredits)
 
   const { toast } = useToast()
@@ -178,9 +171,9 @@ export default function ListingPreview({
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex  flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-2/3">
-          <Card className="bg-white shadow-lg mb-8">
+          <Card className=" shadow-lg mb-8">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h1 className="text-3xl font-bold text-blue-800">
@@ -191,13 +184,13 @@ export default function ListingPreview({
                 )}
               </div>
               <BusinessPhotoSlider photos={businessData.images} />
-              <p className="mt-4 text-gray-700">
+              <p className="mt-4 ">
                 {businessData.description}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-lg mb-8">
+          <Card className=" shadow-lg mb-8">
             <CardContent className="p-6">
               <BusinessDetails
                 isUnlocked={isUnlocked}
@@ -210,7 +203,7 @@ export default function ListingPreview({
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-lg mb-8 z-50">
+          <Card className=" shadow-lg mb-8 z-50">
             <CardContent className="p-6">
               <FinancialPerformance
                 isUnlocked={isUnlocked}
@@ -223,7 +216,7 @@ export default function ListingPreview({
           </Card>
 
 
-          <Card className="bg-white shadow-lg">
+          <Card className=" shadow-lg">
             <CardContent className="p-6">
               <Documents
                 isUnlocked={isUnlocked}
@@ -235,7 +228,7 @@ export default function ListingPreview({
         </div>
 
         <div className="w-full lg:w-1/3 space-y-6">
-          <Card className={`bg-white shadow-lg  top-4 ${!showAIAnalysis ? "sticky" : ""}`}>
+          <Card className={` shadow-lg  top-4 ${!showAIAnalysis ? "sticky" : ""}`}>
             <CardContent className="p-6">
               <FinancialsWidget
                 isUnlocked={isUnlocked}
@@ -271,10 +264,11 @@ export default function ListingPreview({
                 </Button>
 
                 <Button
+                onClick={() => router.push(`/messages/${businessData.id}`)} 
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                   disabled={!isUnlocked}
                 >
-                  <Mail className="mr-2" />
+                  <Mail className="mr-2"  />
                   Contact Seller
                 </Button>
               </div>
@@ -284,7 +278,7 @@ export default function ListingPreview({
 
 
           {showAIAnalysis && aiData && (
-            <Card className="bg-white shadow-lg">
+            <Card className=" shadow-lg">
               <CardContent className="p-6">
                 <AIAnalysis
                   isUnlocked={isUnlocked}

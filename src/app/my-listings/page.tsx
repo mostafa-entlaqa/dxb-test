@@ -7,18 +7,13 @@ export default async function MyBusinessListingsPage() {
 
     const { businessUserData } = await getUserList()
 
+    console.log('businessUserData', businessUserData)
+
+    if(!businessUserData) {
+        return <h1>No business listings found</h1>
+    }
+
  
-    // Transform the data to match the expected structure while keeping original property names
-    // const transformedData = businessUserData.map(item => ({
-    //     id: item.id.toString(), // Ensure id is a string
-    //     images: item.images, // Keep the original images array
-    //     opportunity_name: item.opportunity_name, // Keep the original opportunity_name
-    //     form_status: item.form_status, // Keep the original form_status
-    //     approve: item.approve, // Keep the original approve property
-    // }));
-
-    // console.log("Transformed Data:", transformedData);
-
     return (
         <div className="container mx-auto py-10">
             <h1 className="text-3xl font-bold mb-6">My Business Listings</h1>

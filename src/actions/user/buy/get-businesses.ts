@@ -81,13 +81,15 @@ export async function getBusinesses(filters: FilterParams): Promise<BusinessResp
   const supabase = createServerComponentClient({ cookies })
   
   try {
-    const from = ((filters?.page || 1) - 1) * 12 // Changed to 12 items per page
+    const from = ((filters?.page || 1) - 1) * 12
     const to = from + 11
 
     let query = supabase
       .from('businesses')
       .select('*', { count: 'exact' })
       .range(from, to)
+      .eq('form_status', 'published')
+      .eq('approve_status','approved')     // Only get businesses where approve is not null
 
     // Apply filters
     if (filters?.categoryId && filters.categoryId !== 'all_categories') {
@@ -164,25 +166,10 @@ export async function getBusinesses(filters: FilterParams): Promise<BusinessResp
     }))
 
     // Generate AI content for non-featured businesses
-    const finalBusinesses = await Promise.all(enhancedBusinesses.map(async (business) => {
-      if (!business.featured) {
-        const aiContent = await generateAIContent(
-          business.business_name,
-          business.area?.name || 'Dubai'
-        )
-        if (aiContent) {
-          return {
-            ...business,
-            opportunity_name: aiContent.businessName || business.business_name,
-            description: aiContent.description || business.description
-          }
-        }
-      }
-      return business
-    }))
+   
 
     return {
-      businesses: finalBusinesses,
+      businesses: enhancedBusinesses,
       count: count || 0
     }
   } catch (error) {

@@ -26,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning>
-      <body className={`${oswald.variable} font-sans`}>
+      <body className={`${oswald.variable} font-sans flex flex-col min-h-screen`}>
         <WeglotScript />
         <LanguageProvider>
           <ThemeProvider 
@@ -34,9 +34,11 @@ export default function RootLayout({
             defaultTheme="system" 
             enableSystem
           >
-            <div data-wg-translatable>
+            <div className="flex flex-col min-h-screen" data-wg-translatable>
               <Header />
-              {children}
+              <main className="flex-1">
+                {children}
+              </main>
               <Footer />
             </div>
             <Toaster />

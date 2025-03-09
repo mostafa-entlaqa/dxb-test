@@ -49,7 +49,7 @@ export default function Documents({ isUnlocked, presentation_file, financials_fi
       <div className="space-y-4">
         {presentation_file && (
           <div 
-            className="bg-blue-50 p-4 rounded-lg flex items-center cursor-pointer hover:bg-blue-100 transition-colors"
+            className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg flex items-center cursor-pointer hover:bg-blue-100 transition-colors"
             onClick={() => handleDownload(presentation_file, getFileName(presentation_file))}
           >
             <File className="mr-4 text-blue-600" />
@@ -62,7 +62,7 @@ export default function Documents({ isUnlocked, presentation_file, financials_fi
         
         {financials_file && (
           <div 
-            className="bg-blue-50 p-4 rounded-lg flex items-center cursor-pointer hover:bg-blue-100 transition-colors"
+            className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg flex items-center cursor-pointer hover:bg-blue-100 transition-colors"
             onClick={() => handleDownload(financials_file, getFileName(financials_file))}
           >
             <File className="mr-4 text-green-600" />

@@ -323,7 +323,7 @@ export default function BusinessListingWizard({
 
   return (
     <FormProvider {...methods}>
-      <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg ">
+      <Card className="w-full max-w-4xl mx-auto  shadow-lg ">
         <CardHeader className="text-white bg-blue-600">
           <CardTitle className="text-2xl font-bold">List Your Business for Sale</CardTitle>
           <div className="flex items-center justify-between mt-4">

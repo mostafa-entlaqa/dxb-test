@@ -1,7 +1,7 @@
 import React from 'react'
 import { getUserRole } from '../../actions/get-user-role'
 import { redirect } from 'next/navigation'
-
+export const dynamic = "force-dynamic";
 interface DashboardLayoutProps {
     children: React.ReactNode
     user: React.ReactNode
@@ -9,6 +9,7 @@ interface DashboardLayoutProps {
 }
 
 export default async function DashboardLayout({ children, user, admin }: DashboardLayoutProps) {
+  
   const { userRole, error } = await getUserRole()
   
   // Handle error case

@@ -25,7 +25,7 @@ export default function FinancialPerformance({ isUnlocked, revenue = {}, cost = 
   return (
     <div className={isUnlocked ? "" : "filter blur-sm z-10"}>
       <h2 className="text-2xl font-semibold mb-4 text-blue-800">Financial Performance</h2>
-      <div className="bg-blue-50 p-4 rounded-lg mb-4">
+      <div className="bg-blue-50  dark:bg-blue-950/50 p-4 rounded-lg mb-4">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={transformedData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -39,11 +39,11 @@ export default function FinancialPerformance({ isUnlocked, revenue = {}, cost = 
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg">
           <p className="text-blue-700 font-semibold">Min Profit Margin:</p>
           <p className="text-2xl text-gray-700">{minProfitMargin}%</p>
         </div>
-        <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="bg-blue-50 dark:bg-blue-950/50  p-4 rounded-lg">
           <p className="text-blue-700 font-semibold">Max Profit Margin:</p>
           <p className="text-2xl text-gray-700">{maxProfitMargin}%</p>
         </div>

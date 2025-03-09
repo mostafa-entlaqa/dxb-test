@@ -20,7 +20,8 @@ const PublishStatusToggle: React.FC<PublishStatusToggleProps> = ({ id, currentSt
         const { data, error } = await supabase
             .from('businesses')
             .update({ form_status: newStatus })
-            .eq('id', id); // Use user_id from props
+            .eq('id', id) // Use user_id from props
+            .eq('approve_status','approved')
 
         if (error) {
             console.error('Error updating status:', error);
@@ -35,7 +36,7 @@ const PublishStatusToggle: React.FC<PublishStatusToggleProps> = ({ id, currentSt
     return (
         <div className="flex items-center space-x-2">
             <Switch
-                disabled={!approve} // Disable if approve is null
+                disabled={approve !== "approved"} // Disable if approve is null
                 checked={status === "published"} // Use local state
                 onCheckedChange={togglePublishStatus}
             />

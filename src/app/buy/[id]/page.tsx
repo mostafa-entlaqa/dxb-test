@@ -1,6 +1,10 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import ListingPreview from '../components/business-details/ListingPreview'
+import { Button } from "@/components/ui/button"
+import { MessageSquare } from "lucide-react"
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 async function getBusinessData(businessId: string) {
   const supabase = createServerComponentClient({ cookies })
@@ -23,23 +27,23 @@ async function getBusinessData(businessId: string) {
       return { error: 'Business not found' }
     }
 
-    // Get category and area data
-    const [categoryResponse, areaResponse] = await Promise.all([
-      supabase.from('business_categories').select('*').eq('id', businessResponse.data.category_id).single(),
-      supabase.from('areas').select('*').eq('id', businessResponse.data.area_id).single()
-    ])
-
-    // Check if business is already unlocked for this user
+    // Check if the business belongs to the current user
     let unlockStatus = false
     if (user) {
-      const { data: unlockData } = await supabase
-        .from('unlocked_businesses')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('business_id', businessId)
-        .single()
+      // Set unlockStatus to true if the user is the owner of the business
+      if (businessResponse.data.user_id === user.id) {
+        unlockStatus = true
+      } else {
+        // Check unlocked_businesses table only if user is not the owner
+        const { data: unlockData } = await supabase
+          .from('unlocked_businesses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('business_id', businessId)
+          .single()
 
-      unlockStatus = !!unlockData
+        unlockStatus = !!unlockData
+      }
     }
     let unlockStatusAi = false
     let aiData = null
@@ -57,6 +61,12 @@ async function getBusinessData(businessId: string) {
       console.log('aiData', aiData)
       console.log('unlockStatusAi', unlockStatusAi)
     }
+
+    // Get category and area data
+    const [categoryResponse, areaResponse] = await Promise.all([
+      supabase.from('business_categories').select('*').eq('id', businessResponse.data.category_id).single(),
+      supabase.from('areas').select('*').eq('id', businessResponse.data.area_id).single()
+    ])
 
     return {
       business: businessResponse.data,
@@ -110,6 +120,30 @@ export default async function BusinessPage({ params }: { params: { id: string } 
     images: data.business.images, // Add dummy images if needed
   }
 
+  const supabase = createServerComponentClient({ cookies })
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Add this button in your UI where appropriate
+  const MessageSellerButton = () => {
+    if (!session) {
+      return (
+        <Button onClick={() => redirect('/login')} variant="outline">
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Login to Message Seller
+        </Button>
+      )
+    }
+    
+    return (
+      <Button asChild>
+        <Link href={`/messages/${params.id}`}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Message Seller
+        </Link>
+      </Button>
+    )
+  }
+
   return (
     <ListingPreview
       business={data.isUnlocked ? data.business : dummyBusinessData}
@@ -120,7 +154,9 @@ export default async function BusinessPage({ params }: { params: { id: string } 
       initialUnlockStatus={data.isUnlocked}
       userCredits={data.userCredits}
       aiUserCredits={data.aiUserCredits}
-    />
+    >
+      <MessageSellerButton />
+    </ListingPreview>
   )
 }
 

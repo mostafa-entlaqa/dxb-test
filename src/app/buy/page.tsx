@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 import { getInsights } from '@/actions/user/buy/get-insights'
 import { getFilterOptions } from '@/actions/user/buy/get-filter-options'
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined }
 }

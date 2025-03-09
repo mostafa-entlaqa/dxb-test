@@ -71,8 +71,8 @@ export default function AIAnalysis({ isUnlocked, aiData }: AIAnalysisProps) {
           </div>
         </div>
       </div>
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <div className="text-gray-700">
+      <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg">
+        <div className="">
           <div className="mb-4">
             <h3 className="font-semibold text-lg mb-2">Business Overview</h3>
             <p>{analysis.business_overview}</p>
@@ -93,8 +93,8 @@ export default function AIAnalysis({ isUnlocked, aiData }: AIAnalysisProps) {
             <p>{analysis.market_overview}</p>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600 italic">
+          <div className="mt-6 pt-4 border-t border-gray-200 ">
+            <p className="text-sm text-gray-600 dark:text-gray-400 italic">
               {analysis.standard_ai_disclaimer}
             </p>
           </div>

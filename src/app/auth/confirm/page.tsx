@@ -1,52 +1,50 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function ConfirmPage() {
-  const router = useRouter()
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Suspense fallback={<div>Loading...</div>}>
+        <ConfirmContent />
+      </Suspense>
+    </div>
+  )
+}
+
+function ConfirmContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const supabase = createClientComponentClient()
 
   useEffect(() => {
-    const handleEmailConfirmation = async () => {
-      try {
-        const token_hash = searchParams.get('token_hash')
-        const type = searchParams.get('type')
-        
-        if (!token_hash) {
-          // Check if we're returning from a callback
-          const next = searchParams.get('next')
-          if (next === '/auth/callback') {
-            router.replace('/login?status=already-confirmed')
-            return
-          }
-          router.replace('/login?status=confirmation-error&message=Invalid confirmation link')
-          return
-        }
+    const confirmEmailChange = async () => {
+      const token_hash = searchParams.get('token_hash')
+      const next = searchParams.get('next') ?? '/'
+      const type = searchParams.get('type')
 
-        // Exchange the token for a session
+      if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({
+          type: type as any,
           token_hash,
-          type: type as any || 'signup',
         })
-
-        if (error) {
-          router.replace(`/login?status=confirmation-error&message=${encodeURIComponent(error.message)}`)
-          return
+        if (!error) {
+          router.push(next)
         }
-
-        // Redirect to login with success status
-        router.replace('/login?status=confirmation-success')
-
-      } catch (error) {
-        router.replace(`/login?status=confirmation-error&message=${encodeURIComponent(error instanceof Error ? error.message : 'An error occurred during confirmation')}`)
       }
     }
 
-    handleEmailConfirmation()
-  }, [router, searchParams, supabase.auth])
+    confirmEmailChange()
+  }, [searchParams, router, supabase.auth])
 
-  return null
-} 
+  return (
+    <div className="text-center">
+      <h1 className="text-2xl font-semibold mb-4">Confirming your action...</h1>
+      <p className="text-muted-foreground">Please wait while we verify your request.</p>
+    </div>
+  )
+}

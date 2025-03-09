@@ -28,7 +28,7 @@ export default async function ListBusinessPage({
     .single() : { data: null }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white">
+    <div className="min-h-screen ">
       <div className="container py-10 mx-auto">
         <h1 className="mb-6 text-4xl font-bold text-center text-blue-800">
           List Your Business for Sale
