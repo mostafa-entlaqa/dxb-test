@@ -28,6 +28,12 @@ interface User {
   profile_pic_url: string | null
 }
 
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE'
+  new: Message
+  old: Message | null
+}
+
 export function MessageThread({ 
   businessId, 
   buyerId,
@@ -109,29 +115,6 @@ export function MessageThread({
           .or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
           .order('created_at', { ascending: true })
 
-        // Only mark messages as read where the current user is the RECEIVER (not the sender)
-        if (data && data.length > 0) {
-          // Find messages where current user is the receiver and they're unread
-          const unreadMessagesForCurrentUser = data.filter(
-            message => message.receiver_id === currentUser.id && message.read_at === null
-          )
-          
-          // Only perform update if there are unread messages for current user
-          if (unreadMessagesForCurrentUser.length > 0) {
-            const messageIds = unreadMessagesForCurrentUser.map(msg => msg.id)
-            
-            // Update ONLY the specific messages where current user is the receiver
-            const { error: updateError } = await supabase
-              .from('messages')
-              .update({ read_at: new Date().toISOString() })
-              .in('id', messageIds)
-
-            if (updateError) {
-              console.error('Error updating read status for received messages:', updateError)
-            }
-          }
-        }
-
         if (mounted && data) {
           setMessages(data)
           setTimeout(() => {
@@ -149,66 +132,40 @@ export function MessageThread({
     const supabase = getClientSupabase()
     
     const channel = supabase
-  .channel(`messages-${businessId}`)
-  .on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'messages',
-      filter: `business_id=eq.${businessId}`,
-    },
-    async (payload) => {
-      if (!mounted) return
+      .channel(`messages-${businessId}`)
+      .on(
+        'postgres_changes' as any,
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `business_id=eq.${businessId}`,
+        },
+        async (payload: RealtimePayload) => {
+          if (!mounted) return
 
-      if (payload.eventType === 'INSERT') {
-        const newMessage = payload.new as Message
-        
-        // If this is a message intended for the current user, mark it as read immediately
-        if (newMessage.receiver_id === userId) {
-          // Update read_at in the database
-          const timestamp = new Date().toISOString();
-          const { error } = await supabase
-            .from('messages')
-            .update({ read_at: timestamp })
-            .eq('id', newMessage.id)
-          
-          if (error) {
-            console.error('Error marking message as read:', error);
-            // Add message with original read_at status
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new
             setMessages((prevMessages) => [...prevMessages, newMessage]);
-          } else {
-            // Add message with updated read_at status to frontend state
-            setMessages((prevMessages) => [
-              ...prevMessages, 
-              { ...newMessage, read_at: timestamp }
-            ]);
-          }
-        } else {
-          // This is a message sent by the current user, just add it
-          setMessages((prevMessages) => [...prevMessages, newMessage]);
-        }
 
-        // Scroll to the latest message
-        setTimeout(() => {
-          if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            // Scroll to the latest message
+            setTimeout(() => {
+              if (scrollRef.current) {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+              }
+            }, 100)
+          } else if (payload.eventType === 'UPDATE') {
+            // Handle updates to messages (like read status changes)
+            const updatedMessage = payload.new;
+            setMessages((prevMessages) => 
+              prevMessages.map(msg => 
+                msg.id === updatedMessage.id ? updatedMessage : msg
+              )
+            );
           }
-        }, 100)
-      } else if (payload.eventType === 'UPDATE') {
-        // Handle updates to messages (like read status changes)
-        const updatedMessage = payload.new as Message;
-        
-        // Update the message in our state
-        setMessages((prevMessages) => 
-          prevMessages.map(msg => 
-            msg.id === updatedMessage.id ? updatedMessage : msg
-          )
-        );
-      }
-    }
-  )
-  .subscribe()
+        }
+      )
+      .subscribe()
 
     // Load initial messages
     loadMessages()
@@ -218,6 +175,55 @@ export function MessageThread({
       channel.unsubscribe()
     }
   }, [businessId, buyerId, currentUser?.id])
+
+  // Separate useEffect for handling visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && currentUser?.id && buyerId) {
+        const supabase = getClientSupabase()
+        
+        // Mark unread messages where current user is the receiver
+        const { data: unreadMessages } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('receiver_id', currentUser.id)
+          .is('read_at', null)
+
+        if (unreadMessages && unreadMessages.length > 0) {
+          const timestamp = new Date().toISOString()
+          const messageIds = unreadMessages.map(msg => msg.id)
+          
+          const { error } = await supabase
+            .from('messages')
+            .update({ read_at: timestamp })
+            .in('id', messageIds)
+
+          if (!error) {
+            // Update local message state to reflect read status
+            setMessages(prevMessages => 
+              prevMessages.map(msg => 
+                messageIds.includes(msg.id) 
+                  ? { ...msg, read_at: timestamp }
+                  : msg
+              )
+            )
+          }
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Call once on mount to handle already visible tab
+    if (document.visibilityState === 'visible') {
+      handleVisibilityChange()
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [currentUser?.id, businessId, buyerId])
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -269,13 +275,19 @@ export function MessageThread({
     if (message.sender_id !== currentUserId) return null;
 
     return (
-      <span className="ml-2 flex items-center text-xs text-gray-500">
+      <div className="text-xs text-muted-foreground mt-1 flex justify-end">
         {message.read_at ? (
-          <CheckCheck className="h-4 w-4 text-green-500" />
+          <div className="flex items-center space-x-1">
+            <CheckCheck size={12} className="text-green-500" />
+            
+          </div>
         ) : (
-          <Check className="h-4 w-4" />
+          <div className="flex items-center space-x-1">
+            <Check size={12} />
+            
+          </div>
         )}
-      </span>
+      </div>
     );
   }
 
@@ -284,59 +296,55 @@ export function MessageThread({
       {/* Messages container with normal scrolling */}
       <div ref={scrollRef} className="flex-1 overflow-auto">
         <div className="flex flex-col justify-end min-h-full">
-         
-            <div className="p-4 space-y-4">
-              {loading ? (
-                <div className="flex  items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Loading...
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const isCurrentUser = currentUser?.id === message.sender_id
-                  const messageUser = users[message.sender_id]
+          <div className="p-4 space-y-4">
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Loading...
+              </div>
+            ) : (
+              messages.map((message) => {
+                const isCurrentUser = message.sender_id === currentUser?.id;
+                const user = users[message.sender_id];
 
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}
-                    >
-                      <div className={`flex items-start ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} gap-2`}>
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={messageUser?.profile_pic_url || undefined} />
-                          <AvatarFallback>
-                            {messageUser?.full_name?.charAt(0) || messageUser?.email?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">
-                              {messageUser?.full_name || messageUser?.email?.split('@')[0]}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(message.created_at).toLocaleTimeString()}
-                            </span>
+                return (
+                  <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
+                    <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} max-w-[80%]`}>
+                      {/* Show avatar for both current user and other users */}
+                      <Avatar className="h-8 w-8 mx-2">
+                        {user?.profile_pic_url && (
+                          <AvatarImage src={user.profile_pic_url} alt={user.full_name || user.email} />
+                        )}
+                        <AvatarFallback>
+                          {(user?.full_name?.[0] || user?.email?.[0] || '?').toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div
+                          className={`rounded-lg py-2 px-3 ${
+                            isCurrentUser
+                              ? 'bg-primary text-white rounded-tr-none' 
+                              : 'bg-muted rounded-tl-none'
+                          }`}
+                        >
+                          {message.content}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 flex justify-between">
+                          <div>
+                            {new Date(message.created_at).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit'
+                            })}
                           </div>
-                          <div className="flex items-end gap-2">
-                            <div
-                              className={`rounded-lg px-4 py-2 max-w-md break-words ${
-                                isCurrentUser
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              {message.content}
-                            </div>
-                            {currentUser && <MessageStatus message={message} currentUserId={currentUser.id} />}
-                          </div>
+                          {currentUser && <MessageStatus message={message} currentUserId={currentUser.id} />}
                         </div>
                       </div>
                     </div>
-                  )
-                })
-              )}
-            </div>
-          
+                  </div>
+                )
+              })
+            )}
+          </div>
         </div>
       </div>
 
