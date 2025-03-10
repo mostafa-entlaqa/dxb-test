@@ -81,11 +81,11 @@ export function SidebarClient({
         {filteredBuyers.map((status) => (
           <div 
             key={status.id} 
-            className="flex items-center p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+            className={`flex items-center p-4 transition-colors cursor-pointer ${ isBuyerView && business.id === status.business_id ? 'bg-blue-200 rounded-lg dark:bg-blue-700' : 'hover:bg-gray-200 dark:hover:bg-gray-700' } `}
             onClick={() => handleClick(isBuyerView ? status.business_id : status.buyer.id)}
           >
             {isBuyerView ? (
-              <div className="flex-1">
+              <div className={`flex-1  `}>
                 <div className="font-medium">{status.business.opportunity_name}</div>
                 <div className="text-sm text-muted-foreground">
                   {status.business.category?.name} • {status.business.area?.name}
