@@ -146,6 +146,7 @@ export function MessageThread({
 
           if (payload.eventType === 'INSERT') {
             const newMessage = payload.new
+            if (newMessage.sender_id !== buyerId) return null
             setMessages((prevMessages) => [...prevMessages, newMessage]);
 
             // Scroll to the latest message
