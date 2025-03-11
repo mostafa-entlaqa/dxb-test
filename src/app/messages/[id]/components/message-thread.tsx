@@ -5,11 +5,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2, Check, CheckCheck } from "lucide-react"
+import { Loader2, Check, CheckCheck, Image as ImageIcon, Paperclip, X } from "lucide-react"
 import { BuyerTag } from "./buyer-tag"
 import { useMessages } from "@/hooks/useMessages"
 import { createInitialContact } from "@/actions/user/messages/create-contact"
 import { getClientSupabase } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface Message {
   id: string
@@ -19,6 +20,7 @@ interface Message {
   created_at: string
   business_id: number
   read_at: string | null
+  attachments?: string[]
 }
 
 interface User {
@@ -48,10 +50,14 @@ export function MessageThread({
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const { isBusinessOwner, currentUser } = useMessages(businessId, buyerId)
   const [newMessage, setNewMessage] = useState('')
   const [users, setUsers] = useState<Record<string, User>>({})
+  const [attachmentPreviews, setAttachmentPreviews] = useState<{ url: string; type: 'image' | 'file'; name: string }[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   console.log(messages)
 
@@ -112,7 +118,7 @@ export function MessageThread({
           .from('messages')
           .select('*')
           .eq('business_id', businessId)
-          .or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
+          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
           .order('created_at', { ascending: true })
 
         if (mounted && data) {
@@ -132,7 +138,7 @@ export function MessageThread({
     const supabase = getClientSupabase()
     
     const channel = supabase
-      .channel(`messages-${businessId}`)
+      .channel(`messages-${businessId}-${currentUser?.id}`)
       .on(
         'postgres_changes' as any,
         {
@@ -146,23 +152,27 @@ export function MessageThread({
 
           if (payload.eventType === 'INSERT') {
             const newMessage = payload.new
-            if (newMessage.sender_id !== buyerId) return null
-            setMessages((prevMessages) => [...prevMessages, newMessage]);
+            // Add message if it's part of the current user's conversation
+            if (newMessage.sender_id === currentUser?.id || newMessage.receiver_id === currentUser?.id) {
+              setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-            // Scroll to the latest message
-            setTimeout(() => {
-              if (scrollRef.current) {
-                scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-              }
-            }, 100)
+              // Scroll to the latest message
+              setTimeout(() => {
+                if (scrollRef.current) {
+                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+                }
+              }, 100)
+            }
           } else if (payload.eventType === 'UPDATE') {
             // Handle updates to messages (like read status changes)
             const updatedMessage = payload.new;
-            setMessages((prevMessages) => 
-              prevMessages.map(msg => 
-                msg.id === updatedMessage.id ? updatedMessage : msg
-              )
-            );
+            if (updatedMessage.sender_id === currentUser?.id || updatedMessage.receiver_id === currentUser?.id) {
+              setMessages((prevMessages) => 
+                prevMessages.map(msg => 
+                  msg.id === updatedMessage.id ? updatedMessage : msg
+                )
+              );
+            }
           }
         }
       )
@@ -226,32 +236,107 @@ export function MessageThread({
     }
   }, [currentUser?.id, businessId, buyerId])
 
+  const handleFileUpload = async (file: File) => {
+    if (!currentUser?.id) return;
+    
+    try {
+      setUploading(true);
+      const supabase = getClientSupabase()
+      
+      // Client-side validation
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error('File size must be less than 5MB');
+        return null;
+      }
+      
+      // Upload to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${businessId}/${currentUser.id}/${fileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('message-attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        
+      if (error) {
+        toast.error('Failed to upload file');
+        throw error;
+      }
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(filePath);
+        
+      toast.success('File uploaded successfully');
+      
+      // Add to preview
+      const isImage = file.type.startsWith('image/');
+      setAttachmentPreviews(prev => [...prev, {
+        url: publicUrl,
+        type: isImage ? 'image' : 'file',
+        name: file.name
+      }]);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachmentPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !currentUser || !buyerId || sending) return
+    if ((!newMessage.trim() && attachmentPreviews.length === 0) || !currentUser || !buyerId || sending || uploading) return
 
     setSending(true)
     try {
       const supabase = getClientSupabase()
-      // Create initial contact if needed
-      await createInitialContact(businessId)
 
-      // Send message with read_at explicitly set to null
-      const messageData = {
-        business_id: parseInt(businessId),
-        sender_id: currentUser.id,
-        receiver_id: buyerId,
-        content: newMessage.trim(),
-        read_at: null // Explicitly set to null when sending
-      }
-
-      const { error: sendError } = await supabase
+      // Get all attachment URLs
+      const attachments = attachmentPreviews.map(preview => preview.url);
+      
+      // Create message
+      const { data: message, error } = await supabase
         .from('messages')
-        .insert(messageData)
+        .insert({
+          sender_id: currentUser.id,
+          receiver_id: buyerId,
+          content: newMessage,
+          business_id: businessId,
+          attachments
+        })
+        .select('*')
+        .single()
 
-      if (sendError) throw sendError
+      if (error) throw error
 
       setNewMessage('')
+      setAttachmentPreviews([])
+      setMessages((prev) => [...prev, message])
+
+      // Scroll to bottom
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        }
+      }, 100)
     } catch (error) {
       console.error('Error sending message:', error)
     } finally {
@@ -328,7 +413,35 @@ export function MessageThread({
                               : 'bg-muted rounded-tl-none'
                           }`}
                         >
-                          {message.content}
+                          <div className="whitespace-pre-wrap">{message.content}</div>
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                              {message.attachments.map((url, index) => {
+                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                                return isImage ? (
+                                  <div key={index} className="relative">
+                                    <img 
+                                      src={url} 
+                                      alt="Attachment" 
+                                      className="max-w-[200px] rounded-md"
+                                      onClick={() => window.open(url, '_blank')}
+                                    />
+                                  </div>
+                                ) : (
+                                  <a 
+                                    key={index}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-sm hover:underline"
+                                  >
+                                    <Paperclip className="h-4 w-4" />
+                                    <span>{url.split('/').pop()}</span>
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 flex justify-between">
                           <div>
@@ -355,25 +468,110 @@ export function MessageThread({
           {isBusinessOwner && (
             <BuyerTag businessId={businessId} buyerId={buyerId || ''} isLoading={false} />
           )}
-          <div className="flex mt-2">
+          
+          {/* Upload buttons */}
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              className="p-2 hover:bg-muted rounded-md"
+              disabled={sending || uploading}
+            >
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 hover:bg-muted rounded-md"
+              disabled={sending || uploading}
+            >
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+            </button>
+            {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+
+          {/* Attachment previews */}
+          {attachmentPreviews.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {attachmentPreviews.map((preview, index) => (
+                <div key={index} className="relative group">
+                  {preview.type === 'image' ? (
+                    <div className="relative">
+                      <img 
+                        src={preview.url} 
+                        alt="Preview" 
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative bg-muted p-2 rounded-md">
+                      <Paperclip className="h-4 w-4 mb-1" />
+                      <div className="text-xs truncate max-w-[72px]">{preview.name}</div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Message input */}
+          <div className="flex">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
               className="flex-1 mr-2"
-              disabled={sending}
+              disabled={sending || uploading}
             />
-            <Button type="submit" disabled={sending}>
-              {sending ? (
+            <Button type="submit" disabled={sending || uploading || (!newMessage.trim() && attachmentPreviews.length === 0)}>
+              {sending || uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Sending...
+                  {uploading ? 'Uploading...' : 'Sending...'}
                 </>
               ) : (
                 'Send'
               )}
             </Button>
           </div>
+
+          <input
+            type="file"
+            ref={imageInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              await handleFileUpload(file);
+              e.target.value = '';
+            }}
+          />
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              await handleFileUpload(file);
+              e.target.value = '';
+            }}
+          />
         </form>
       </div>
     </div>

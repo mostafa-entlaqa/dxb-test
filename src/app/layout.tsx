@@ -2,7 +2,8 @@ import '@/app/globals.css'
 import '@/styles/rtl.css'
 import { Oswald } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
-import { Toaster } from '@/components/ui/toaster'
+import { Toaster as ShadcnToaster } from '@/components/ui/toaster'
+import { Toaster } from 'sonner'
 import { Header } from '@/components/header'
 import Footer from '@/components/footer'
 import { LanguageProvider } from '@/contexts/language-context'
@@ -41,11 +42,11 @@ export default function RootLayout({
               </main>
               <Footer />
             </div>
-            <Toaster />
+            <ShadcnToaster />
+            <Toaster richColors position="top-right" />
           </ThemeProvider>
         </LanguageProvider>
       </body>
     </html>
   )
 }
-
