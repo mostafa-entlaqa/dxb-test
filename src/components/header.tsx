@@ -7,6 +7,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/user-menu'
+import { MessageDropdown } from '@/components/messges-dropdown'
 import { Menu } from 'lucide-react'
 import {
   Sheet,
@@ -24,7 +25,6 @@ const navigationLinks = [
   { href: '/sell', label: "Sell Business" },
   { href: '/contact', label: "Contact" },
   // { href: '/my-listings', label: "My Business Listings" },
-
 ]
 
 export function Header() {
@@ -33,8 +33,6 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const supabase = createClientComponentClient()
-
-
 
   useEffect(() => {
     const getUser = async () => {
@@ -118,7 +116,10 @@ export function Header() {
           {!isLoading && (
             <div className="hidden md:flex items-center gap-4">
               {user ? (
-                <UserMenu user={user} />
+                <>
+                  <MessageDropdown user={user} />
+                  <UserMenu user={user} />
+                </>
               ) : (
                 <>
                   <Button variant="ghost" asChild>
@@ -160,14 +161,25 @@ export function Header() {
                 </nav>
 
                 {/* Mobile Auth Buttons */}
-                {!isLoading && !user && (
+                {!isLoading && (
                   <div className="flex flex-col gap-2 mt-4 px-4">
-                    <Button asChild variant="outline">
-                      <Link href="/login">Sign In</Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/signup">Sign Up</Link>
-                    </Button>
+                    {user ? (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageDropdown user={user} />
+                          <span className="text-sm font-medium">Messages</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Button asChild variant="outline">
+                          <Link href="/login">Sign In</Link>
+                        </Button>
+                        <Button asChild>
+                          <Link href="/signup">Sign Up</Link>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -178,4 +190,3 @@ export function Header() {
     </header>
   )
 }
-

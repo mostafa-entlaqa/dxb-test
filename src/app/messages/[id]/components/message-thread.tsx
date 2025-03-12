@@ -59,7 +59,6 @@ export function MessageThread({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
-  console.log(messages)
 
   useEffect(() => {
     setLoading(true)
@@ -114,12 +113,21 @@ export function MessageThread({
       if (!currentUser?.id || !buyerId) return
       try {
         const supabase = getClientSupabase()
-        const { data } = await supabase
+        
+        // For business owners, show all messages in the business thread with this buyer
+        // For buyers, show messages where they are sender or receiver
+        const query = supabase
           .from('messages')
           .select('*')
           .eq('business_id', businessId)
-          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-          .order('created_at', { ascending: true })
+        
+        if (!isBusinessOwner) {
+          query.or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+        } else {
+          query.or(`sender_id.eq.${buyerId},receiver_id.eq.${buyerId}`)
+        }
+        
+        const { data } = await query.order('created_at', { ascending: true })
 
         if (mounted && data) {
           setMessages(data)
@@ -135,57 +143,94 @@ export function MessageThread({
     }
 
     // Set up real-time subscriptions
-    const supabase = getClientSupabase()
-    
-    const channel = supabase
-      .channel(`messages-${businessId}-${currentUser?.id}`)
-      .on(
-        'postgres_changes' as any,
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `business_id=eq.${businessId}`,
-        },
-        async (payload: RealtimePayload) => {
-          if (!mounted) return
+    const setupRealtimeSubscription = async () => {
+      const supabase = getClientSupabase()
+      
+      // Get business owner ID if needed
+      let ownerId = null;
+      if (!isBusinessOwner) {
+        const { data } = await supabase
+          .from('businesses')
+          .select('user_id')
+          .eq('id', businessId)
+          .single();
+        ownerId = data?.user_id;
+      }
+      
+      const channel = supabase
+        .channel(`messages-${businessId}-${currentUser?.id}`)
+        .on(
+          'postgres_changes' as any,
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `business_id=eq.${businessId}`,
+          },
+          async (payload: RealtimePayload) => {
+            if (!mounted) return
 
-          if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new
-            // Add message if it's part of the current user's conversation
-            if (newMessage.sender_id === currentUser?.id || newMessage.receiver_id === currentUser?.id) {
-              setMessages((prevMessages) => [...prevMessages, newMessage]);
+            if (payload.eventType === 'INSERT') {
+              const newMessage = payload.new
+              // For business owners, show all messages in their business with this buyer
+              // For buyers, show messages where they are sender/receiver
+              const shouldShow = isBusinessOwner 
+                ? (newMessage.sender_id === buyerId || newMessage.receiver_id === buyerId)
+                : (newMessage.sender_id === currentUser?.id || newMessage.receiver_id === currentUser?.id || 
+                   newMessage.sender_id === ownerId || newMessage.receiver_id === ownerId);
 
-              // Scroll to the latest message
-              setTimeout(() => {
-                if (scrollRef.current) {
-                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-                }
-              }, 100)
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            // Handle updates to messages (like read status changes)
-            const updatedMessage = payload.new;
-            if (updatedMessage.sender_id === currentUser?.id || updatedMessage.receiver_id === currentUser?.id) {
-              setMessages((prevMessages) => 
-                prevMessages.map(msg => 
-                  msg.id === updatedMessage.id ? updatedMessage : msg
-                )
-              );
+              if (shouldShow) {
+                // Check if message already exists to prevent duplicates
+                setMessages((prevMessages) => {
+                  const exists = prevMessages.some(msg => msg.id === newMessage.id);
+                  if (exists) return prevMessages;
+                  return [...prevMessages, newMessage];
+                });
+
+                // Scroll to the latest message
+                setTimeout(() => {
+                  if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+                  }
+                }, 100)
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              // Handle updates to messages (like read status changes)
+              const updatedMessage = payload.new;
+              const shouldUpdate = isBusinessOwner 
+                ? (updatedMessage.sender_id === buyerId || updatedMessage.receiver_id === buyerId)
+                : (updatedMessage.sender_id === currentUser?.id || updatedMessage.receiver_id === currentUser?.id ||
+                   updatedMessage.sender_id === ownerId || updatedMessage.receiver_id === ownerId);
+
+              if (shouldUpdate) {
+                setMessages((prevMessages) => 
+                  prevMessages.map(msg => 
+                    msg.id === updatedMessage.id ? updatedMessage : msg
+                  )
+                );
+              }
             }
           }
-        }
-      )
-      .subscribe()
+        )
+        .subscribe()
 
-    // Load initial messages
+      return channel;
+    }
+
+    // Load initial messages and set up subscription
     loadMessages()
+    let channel: any;
+    setupRealtimeSubscription().then(ch => {
+      channel = ch;
+    });
 
     return () => {
       mounted = false
-      channel.unsubscribe()
+      if (channel) {
+        channel.unsubscribe()
+      }
     }
-  }, [businessId, buyerId, currentUser?.id])
+  }, [businessId, buyerId, currentUser?.id, isBusinessOwner])
 
   // Separate useEffect for handling visibility changes
   useEffect(() => {
@@ -312,37 +357,46 @@ export function MessageThread({
       // Get all attachment URLs
       const attachments = attachmentPreviews.map(preview => preview.url);
       
-      // Create message
-      const { data: message, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: currentUser.id,
-          receiver_id: buyerId,
-          content: newMessage,
-          business_id: businessId,
-          attachments
-        })
-        .select('*')
-        .single()
+      // For business owners, they are always the receiver when buyer sends, and sender when responding
+      // For buyers, they are always the sender when initiating, and receiver when business owner responds
+      const messageData = {
+        sender_id: currentUser.id,
+        receiver_id: isBusinessOwner ? buyerId : (await getBusinessOwnerId()),
+        content: newMessage,
+        business_id: businessId,
+        attachments
+      };
 
+      // Create message
+      const { error } = await supabase
+        .from('messages')
+        .insert(messageData)
+        
       if (error) throw error
 
       setNewMessage('')
       setAttachmentPreviews([])
-      setMessages((prev) => [...prev, message])
-
-      // Scroll to bottom
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-        }
-      }, 100)
+      
+      // Message will be added to state through real-time subscription
     } catch (error) {
       console.error('Error sending message:', error)
+      toast.error('Failed to send message')
     } finally {
       setSending(false)
     }
   }
+
+  // Helper function to get business owner ID
+  const getBusinessOwnerId = async () => {
+    const supabase = getClientSupabase();
+    const { data } = await supabase
+      .from('businesses')
+      .select('user_id')
+      .eq('id', businessId)
+      .single();
+    
+    return data?.user_id;
+  };
 
   // Show placeholder for business owner with no selected buyer
   if (isBusinessOwner && !buyerId) {
