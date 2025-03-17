@@ -90,6 +90,8 @@ export default async function MessagesPage({ params, searchParams }: {
           buyerId={buyerId} 
           initialMessages={initialMessages ? initialMessages : []}
           className="flex-1" 
+          currentBuyerId={searchParams.buyer}
+          businessOwnerId={business.user_id}
         />
       </div>
     </div>

@@ -30,7 +30,6 @@ export function BusinessOpportunityHeader({
   const supabase = createClientComponentClient()
 
   // Debug logs
-  console.log('Raw images:', business.images)
 
 
 

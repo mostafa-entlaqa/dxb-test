@@ -40,12 +40,16 @@ export function MessageThread({
   businessId, 
   buyerId,
   initialMessages,
-  className 
+  className,
+  currentBuyerId,
+  businessOwnerId
 }: { 
   businessId: string
   buyerId: string | null
   initialMessages: Message[]
-  className?: string 
+  className?: string
+  currentBuyerId: string | undefined
+  businessOwnerId: string | undefined
 }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
@@ -239,33 +243,65 @@ export function MessageThread({
         const supabase = getClientSupabase()
         
         // Mark unread messages where current user is the receiver
-        const { data: unreadMessages } = await supabase
+        
+        const { data: unreadMessages, error: fetchError } = await supabase
+        .from('messages')
+        .select('id, receiver_id, sender_id')
+        .eq('business_id', businessId)
+        .eq('receiver_id', currentUser.id)
+        .is('read_at', null);
+      
+      if (fetchError) {
+        console.error('Error fetching messages:', fetchError);
+        return;
+      }
+      
+      console.log('Unread Messages:', unreadMessages);
+      console.log('Current Buyer ID:', currentBuyerId);
+      console.log('Business Owner ID:', businessOwnerId);
+      
+      // Filter messages where sender is the current buyer
+      const buyerMessages = unreadMessages?.filter(msg => msg.sender_id === currentBuyerId) || [];
+      const ownerMessages = unreadMessages?.filter(msg => msg.sender_id === businessOwnerId) || [];
+      
+      // Function to update messages
+      const updateMessages = async (messages: { id: string }[]) => {
+        if (messages.length === 0) return;
+      
+        const timestamp = new Date().toISOString();
+        const messageIds = messages.map(msg => msg.id);
+      
+        console.log('Updating messages:', messageIds);
+      
+        const { error } = await supabase
           .from('messages')
-          .select('id')
-          .eq('business_id', businessId)
-          .eq('receiver_id', currentUser.id)
-          .is('read_at', null)
-
-        if (unreadMessages && unreadMessages.length > 0) {
-          const timestamp = new Date().toISOString()
-          const messageIds = unreadMessages.map(msg => msg.id)
-          
-          const { error } = await supabase
-            .from('messages')
-            .update({ read_at: timestamp })
-            .in('id', messageIds)
-
-          if (!error) {
-            // Update local message state to reflect read status
-            setMessages(prevMessages => 
-              prevMessages.map(msg => 
-                messageIds.includes(msg.id) 
-                  ? { ...msg, read_at: timestamp }
-                  : msg
-              )
+          .update({ read_at: timestamp })
+          .in('id', messageIds);
+      
+        if (!error) {
+          console.log('Messages updated successfully');
+          setMessages(prevMessages =>
+            prevMessages.map(msg =>
+              messageIds.includes(msg.id) ? { ...msg, read_at: timestamp } : msg
             )
-          }
+          );
+        } else {
+          console.error('Error updating messages:', error);
         }
+      };
+      
+      // Update messages for the current buyer
+      if (currentBuyerId && buyerMessages.length > 0) {
+        console.log('Updating buyer messages');
+        await updateMessages(buyerMessages);
+      }
+      
+      // Update messages for the business owner
+      if (businessOwnerId && ownerMessages.length > 0) {
+        console.log('Updating business owner messages');
+        await updateMessages(ownerMessages);
+      }
+      
       }
     }
 
