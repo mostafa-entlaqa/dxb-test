@@ -414,9 +414,16 @@ export function MessageThread({
       setAttachmentPreviews([])
       
       // Message will be added to state through real-time subscription
-    } catch (error) {
-      console.error('Error sending message:', error)
-      toast.error('Failed to send message')
+    } catch ( error) {
+          //@ts-ignore
+        if (error.message === "Messages containing phone numbers or social links are not allowed") {
+          toast.error('Messages containing  phone numbers or social links are not allowed')
+  
+        } else {
+          toast.error('Failed to send message')
+  
+        }
+    
     } finally {
       setSending(false)
     }
