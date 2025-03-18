@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/user-menu'
@@ -17,6 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { usePathname } from 'next/navigation'
+import { getClientSupabase } from '@/lib/supabase/client'
 
 const navigationLinks = [
   { href: '/', label: "Home" },
@@ -32,7 +32,7 @@ export function Header() {
   const [isLoading, setIsLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const supabase = createClientComponentClient()
+  const supabase = getClientSupabase()
 
   useEffect(() => {
     const getUser = async () => {

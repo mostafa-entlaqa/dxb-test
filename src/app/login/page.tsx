@@ -5,9 +5,10 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getClientSupabase } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,7 +37,6 @@ export default function LoginPage() {
 
 function LoginForm() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
 
   return (
     <Suspense fallback={null}>
@@ -47,7 +47,7 @@ function LoginForm() {
 
 function LoginFormContent() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = getClientSupabase()
   const searchParams = useSearchParams()
   const next = searchParams.get('next')
 
