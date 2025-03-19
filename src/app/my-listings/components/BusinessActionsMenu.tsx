@@ -7,17 +7,71 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Crown, Edit, Eye, MessageSquare, MoreHorizontal } from "lucide-react"
+import { getClientSupabase } from "@/lib/supabase/client"
+import { getSupabase } from "@/utils/supabase-client"
+import { Crown, Edit, Eye, MessageSquare, MoreHorizontal, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from '@/hooks/use-toast'; // Adjust the import based on your setup
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface BusinessActionsMenuProps {
     businessId: string
     isFeatured: boolean
     onUpgrade: (id: string) => Promise<void>
+    ApproveStatus: string
 }
 
-export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade }: BusinessActionsMenuProps) {
+export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade, ApproveStatus }: BusinessActionsMenuProps) {
+    console.log('ApproveStatus', ApproveStatus)
     const router = useRouter()
+
+    const handleClose = async () => {
+        // Validate the businessId
+        if (!businessId) {
+            toast({
+                title: "Error",
+                description: "Business ID is required",
+                variant: "destructive"
+            });
+            return;
+        }
+        const supabase = getClientSupabase()
+        // Update the approve_status to 'close'
+        const { data, error } = await supabase
+            .from('businesses') // Adjust the table name if necessary
+            .update({ approve_status: 'close' })
+            .eq('id', businessId);
+
+        if (error) {
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // Optionally, you can refresh the data or update the UI here
+        toast({
+            title: "Success",
+            description: "Business closed successfully.",
+            variant: "default"
+        });
+
+        window.location.reload()
+
+
+    };
 
     return (
         <div className="flex items-center justify-end gap-2">
@@ -49,10 +103,31 @@ export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade }: Busin
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Messages
                     </DropdownMenuItem>
+                    {ApproveStatus !== "close" && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} // Prevents closing the menu
+                                    className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Close Business
+                                </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently close your business.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleClose}>Continue</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
-            
-           
         </div>
     )
-} 
+}

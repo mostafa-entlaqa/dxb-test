@@ -185,6 +185,7 @@ export const columns: ColumnDef<BusinessTypeCol>[] = [
     cell: ({ row }) => {
       return (
         <BusinessActionsMenu
+          ApproveStatus={row.original.approve_status}
           businessId={row.original.id}
           isFeatured={row.original.featured}
           onUpgrade={handleUpgrade}
