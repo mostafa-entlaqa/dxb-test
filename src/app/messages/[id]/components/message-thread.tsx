@@ -568,22 +568,24 @@ export function MessageThread({
           
           {/* Upload buttons */}
           <div className="flex items-center gap-2 mb-2">
-            <button
+            <Button
+            variant={'outline'}
               type="button"
               onClick={() => imageInputRef.current?.click()}
-              className="p-2 hover:bg-muted rounded-md"
+              className="p-2 w-14 hover:bg-muted rounded-md"
               disabled={sending || uploading}
             >
               <ImageIcon className="h-5 w-5 text-muted-foreground" />
-            </button>
-            <button
+            </Button>
+            <Button
+            variant={'outline'}
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 hover:bg-muted rounded-md"
+              className="p-2 w-14  hover:bg-muted rounded-md"
               disabled={sending || uploading}
             >
               <Paperclip className="h-5 w-5 text-muted-foreground" />
-            </button>
+            </Button>
             {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
           </div>
 
@@ -646,7 +648,8 @@ export function MessageThread({
             </Button>
           </div>
 
-          <input
+         
+         <input
             type="file"
             ref={imageInputRef}
             accept="image/*"
@@ -658,6 +661,7 @@ export function MessageThread({
               e.target.value = '';
             }}
           />
+         
           <input
             type="file"
             ref={fileInputRef}

@@ -20,15 +20,15 @@ export function FilterMyBusinessListings({ table }: FilterMyBusinessListingsProp
 
         // Set status filters based on statusFilter value
         if (statusFilter === "all") {
-            table.getColumn("approve_status")?.setFilterValue('')
+            // For "all", just exclude "close" status
+            table.getColumn("approve_status")?.setFilterValue("!close")
             table.getColumn("form_status")?.setFilterValue('')
-
         } else if (statusFilter === "Published") {
-            // table.getColumn("approve_status")?.setFilterValue("not_close")
             table.getColumn("form_status")?.setFilterValue("published")
+            table.getColumn("approve_status")?.setFilterValue("!close")
         } else if (statusFilter === "Draft") {
-            table.getColumn("approve_status")?.setFilterValue("not_close")
             table.getColumn("form_status")?.setFilterValue("Draft")
+            table.getColumn("approve_status")?.setFilterValue("!close")
         } else if (statusFilter === "close") {
             table.getColumn("approve_status")?.setFilterValue("close")
             table.getColumn("form_status")?.setFilterValue(undefined)
@@ -57,10 +57,10 @@ export function FilterMyBusinessListings({ table }: FilterMyBusinessListingsProp
                         <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All (Published, Draft)</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         <SelectItem value="Published">Published</SelectItem>
                         <SelectItem value="Draft">Draft</SelectItem>
-                        <SelectItem value="close">Close</SelectItem>
+                        <SelectItem value="close">Closed</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

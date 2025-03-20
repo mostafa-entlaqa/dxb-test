@@ -32,7 +32,6 @@ interface BusinessActionsMenuProps {
 }
 
 export function BusinessActionsMenu({ businessId, isFeatured, onUpgrade, ApproveStatus }: BusinessActionsMenuProps) {
-    console.log('ApproveStatus', ApproveStatus)
     const router = useRouter()
 
     const handleClose = async () => {

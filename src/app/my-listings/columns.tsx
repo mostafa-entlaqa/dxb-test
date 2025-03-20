@@ -94,6 +94,12 @@ export const columns: ColumnDef<BusinessTypeCol>[] = [
   {
     accessorKey: "approve_status",
     header: "Status",
+    filterFn: (row, id, filterValue) => {
+        if (filterValue === "!close") {
+            return row.getValue(id) !== "close";
+        }
+        return row.getValue(id) === filterValue;
+    },
     cell: ({ row }) => {
       const status = row.original.approve_status
       const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
