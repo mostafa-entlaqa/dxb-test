@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getClientSupabase } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -50,30 +51,58 @@ function LoginFormContent() {
   const supabase = getClientSupabase()
   const searchParams = useSearchParams()
   const next = searchParams.get('next')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
+    setIsLoading(true)
+    setError('') // Clear previous errors
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const formData = new FormData(e.currentTarget)
+      const email = formData.get('email') as string
+      const password = formData.get('password') as string
 
-    if (error) {
-      return console.error('Error:', error.message)
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        // Set appropriate error message
+        switch (error.message) {
+          case "Invalid login credentials":
+            setError("Invalid email or password. Please try again.")
+            break
+          case "Too many requests":
+            setError("Too many attempts. Please wait a few minutes before trying again.")
+            break
+          default:
+            setError("An error occurred during login. Please try again.")
+        }
+        return
+      }
+
+      router.refresh()
+      router.push(next || '/dashboard')
+
+    } catch (error) {
+      setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
-
-    router.refresh()
-    router.push(next || '/dashboard')
   }
 
   return (
     <div className="grid gap-6">
       <form onSubmit={handleSubmit}>
         <div className="grid gap-4">
+          {error && (
+            <div className="text-sm text-red-500 bg-red-50 p-3 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="grid gap-1">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -84,6 +113,7 @@ function LoginFormContent() {
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect="off"
+              disabled={isLoading}
               required
             />
           </div>
@@ -95,6 +125,7 @@ function LoginFormContent() {
               type="password"
               name="password"
               autoComplete="current-password"
+              disabled={isLoading}
               required
             />
           </div>
@@ -103,7 +134,9 @@ function LoginFormContent() {
               Forgot password?
             </Link>
           </div>
-          <Button type="submit">Sign In</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Signing in..." : "Sign In"}
+          </Button>
         </div>
       </form>
     </div>

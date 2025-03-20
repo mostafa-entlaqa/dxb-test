@@ -103,7 +103,7 @@ export function MessageDropdown({ user }: { user: any }) {
             attachments,
             created_at,
             business_id,
-            business:businesses(id, opportunity_name)
+            business:businesses(id, opportunity_name, user_id)
           `)
           .eq("receiver_id", user.id)
           .is("read_at", null)
@@ -244,7 +244,12 @@ export function MessageDropdown({ user }: { user: any }) {
             unreadMessages.map((message) => (
               <DropdownMenuItem key={message.id} className="p-0 focus:bg-transparent">
                 <Link
-                  href={`/messages/${message.business_id || ""}`}
+                  href={
+                    // Check if the user is the business owner (receiver is the owner)
+                    message.business?.user_id === user.id 
+                      ? `/messages/${message.business_id}?buyer=${message.sender_id}`
+                      : `/messages/${message.business_id || ""}`
+                  }
                   className="flex items-start gap-3 p-3 w-full hover:bg-accent rounded-md"
                   onClick={() => markAsRead(message.id)}
                 >
