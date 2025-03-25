@@ -1,11 +1,23 @@
+// export interface Message {
+//   id: string
+//   business_id: string
+//   sender_id: string
+//   receiver_id: string
+//   content: string
+//   created_at: string
+//   status: "sent" | "delivered" | "read"
+// }
+
+
 export interface Message {
   id: string
-  business_id: string
   sender_id: string
   receiver_id: string
   content: string
   created_at: string
-  status: "sent" | "delivered" | "read"
+  business_id: number
+  read_at: string | null
+  attachments?: string[]
 }
 
 export interface Business {
