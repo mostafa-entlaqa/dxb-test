@@ -370,4 +370,4 @@ export function MessageThread({
       </div>
     </div>
   )
-}
+} 
