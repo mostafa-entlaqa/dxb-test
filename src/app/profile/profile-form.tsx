@@ -12,17 +12,34 @@ import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useToast } from "@/components/ui/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, Upload, User, Linkedin, Phone, Trash2 } from "lucide-react"
+import { Loader2, Upload, User, Phone, Trash2 } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { LinkedinUrlField } from "./linkedin-url-field"
+import { ChangePasswordDialog } from "./change-password-dialog"
 
 // Form schema using zod
-const formSchema = z.object({
-  full_name: z.string().min(2, "Full name must be at least 2 characters").max(100).optional(),
-  linkedin_url: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
-  phone_number: z.string().min(8, "Phone number must be at least 8 digits").max(15).optional(),
-  profile_pic_url: z.string().url("Invalid URL").optional().or(z.literal("")),
-})
+const formSchema = z
+  .object({
+    full_name: z.string().min(2, "Full name must be at least 2 characters").max(100).optional(),
+    linkedin_url: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
+    phone_number: z.string().min(8, "Phone number must be at least 8 digits").max(15).optional(),
+    profile_pic_url: z.string().url("Invalid URL").optional().or(z.literal("")),
+    password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
+    confirm_password: z.string().optional().or(z.literal("")),
+  })
+  .refine(
+    (data) => {
+      // If password is provided, confirm_password must match
+      if (data.password && data.password !== data.confirm_password) {
+        return false
+      }
+      return true
+    },
+    {
+      message: "Passwords do not match",
+      path: ["confirm_password"],
+    },
+  )
 
 type FormValues = z.infer<typeof formSchema>
 
@@ -47,6 +64,8 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       linkedin_url: user.linkedin_url || "",
       phone_number: user.phone_number || "",
       profile_pic_url: user.profile_pic_url || "",
+      password: "",
+      confirm_password: "",
     },
   })
 
@@ -133,7 +152,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       setIsUploading(false)
       // Clear the file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = ""
       }
     }
   }
@@ -145,27 +164,61 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     setIsFormDirty(true)
   }
 
+  // Handle password update
+  async function updatePassword(password: string) {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been updated successfully.",
+      })
+
+      // Clear password fields
+      form.setValue("password", "")
+      form.setValue("confirm_password", "")
+    } catch (error) {
+      console.error("Error updating password:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update password",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Handle form submission
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true)
-
+  
     try {
+      // Handle password update if provided (but no toast for it)
+      if (data.password) {
+        await updatePassword(data.password)
+      }
+  
       // Create FormData object
       const formData = new FormData()
-
+  
       // Always include profile_pic_url (even if empty to allow clearing)
       formData.append("profile_pic_url", data.profile_pic_url || "")
-      
+  
       // Add other fields only if they have values
       if (data.full_name) formData.append("full_name", data.full_name)
       if (data.linkedin_url !== undefined) formData.append("linkedin_url", data.linkedin_url || "")
       if (data.phone_number) formData.append("phone_number", data.phone_number)
-
+  
       console.log("Submitting form data:", Object.fromEntries(formData.entries()))
-
+  
       // Submit the form data
       const result = await updateUserProfile(user.id, formData)
-
+  
       if (result.success) {
         setIsFormDirty(false)
         toast({
@@ -207,6 +260,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       setIsSubmitting(false)
     }
   }
+  
 
   return (
     <Form {...form}>
@@ -249,7 +303,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
               </Button>
 
               {profilePicUrl && (
-                <Button type="button" variant="destructive" size="sm" onClick={handleRemoveProfilePic} disabled={isUploading}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleRemoveProfilePic}
+                  disabled={isUploading}
+                >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remove
                 </Button>
@@ -332,20 +392,20 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           </div>
         </div>
 
-        <Button 
-          type="submit" 
-          disabled={isSubmitting || !isFormDirty} 
-          className="w-full sm:w-auto"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Updating...
-            </>
-          ) : (
-            "Update Profile"
-          )}
-        </Button>
+        
+        <div className="flex justify-between items-center pt-6 border-t">
+          <ChangePasswordDialog />
+          <Button type="submit" disabled={isSubmitting || !isFormDirty} className="w-full sm:w-auto ml-auto">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Update Profile"
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   )
