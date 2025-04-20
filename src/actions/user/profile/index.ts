@@ -125,7 +125,6 @@ export async function updateUserProfile(userId: string, formData: FormData) {
       updated_at: new Date().toISOString(),
     }
 
-    console.log("Updating profile with data:", updateData)
 
     const { error } = await supabase
       .from("users")

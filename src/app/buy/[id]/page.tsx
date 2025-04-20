@@ -54,12 +54,10 @@ async function getBusinessData(businessId: string) {
         .eq('user_id', user.id)
         .eq('business_id', businessId)
         .single()
-      console.log('unlockDataAi', unlockDataAi)
 
       unlockStatusAi = !!unlockDataAi
       aiData = unlockDataAi
-      console.log('aiData', aiData)
-      console.log('unlockStatusAi', unlockStatusAi)
+    
     }
 
     // Get category and area data
