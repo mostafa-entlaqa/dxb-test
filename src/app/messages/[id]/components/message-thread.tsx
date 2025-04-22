@@ -225,7 +225,7 @@ export function MessageThread({
           return;
         }
 
-        console.log('Unread Messages:', unreadMessages);
+        console.log('Unread Messages:', unreadMessages);  
         console.log('Current Buyer ID:', currentBuyerId);
         console.log('Business Owner ID:', businessOwnerId);
 
