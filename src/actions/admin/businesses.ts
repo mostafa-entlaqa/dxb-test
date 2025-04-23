@@ -6,7 +6,7 @@ import { getServerSupabase } from '@/lib/supabase/utils'
 export type Business = {
   id: string
   name: string
-  type: 'investment' | 'buy'
+  acquisition_type: 'Invest' | 'Buy'
   Featured: boolean
   images: string[]
   files: string[]

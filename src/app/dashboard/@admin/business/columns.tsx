@@ -19,17 +19,17 @@ import { format } from "date-fns"
 export type Business = {
     id: string
     name: string
-    acquisition_type: 'Investment' | 'Buy'
+    acquisition_type: 'Invest' | 'Buy'
     Featured: boolean
     images: string[]
     files: string[]
     form_status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'closed'
-    session_id: string
-    opportunity_description: string
-    investment_percentage: number
-    approveAt: string | null
-    approve_status: string
-    subscription_end_date: string | null
+    session_id?: string
+    opportunity_description?: string
+    investment_percentage?: number
+    approveAt?: string | null
+    approve_status?: string
+    subscription_end_date?: string | null
     created_at: string
 }
 

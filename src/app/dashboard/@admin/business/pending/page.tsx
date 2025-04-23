@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { MoreHorizontal, Search, FileText } from "lucide-react"
+import { MoreHorizontal, Search } from "lucide-react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,11 +25,8 @@ async function PendingBusinessTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Business ID</TableHead>
-            <TableHead>Business Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Featured</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>Files</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Investment %</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -37,7 +34,7 @@ async function PendingBusinessTable() {
         <TableBody>
           {businesses.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                 No pending businesses found
               </TableCell>
             </TableRow>
@@ -45,42 +42,8 @@ async function PendingBusinessTable() {
             businesses.map((business) => (
               <TableRow key={business.id}>
                 <TableCell className="font-medium">{business.id}</TableCell>
-                <TableCell>{business.name}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {business.type === 'investment' ? 'Investment' : 'Buy'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {business.is_featured ? (
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      Featured
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Not Featured</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {business.images && business.images[0] ? (
-                    <img
-                      src={business.images[0]}
-                      alt={business.name}
-                      className="w-10 h-10 object-cover rounded-md"
-                    />
-                  ) : (
-                    <span className="text-muted-foreground">No image</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {business.files && business.files.length > 0 ? (
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-4 w-4" />
-                      <span>{business.files.length}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">No files</span>
-                  )}
-                </TableCell>
+                <TableCell>{business.opportunity_description}</TableCell>
+                <TableCell>{business.investment_percentage}%</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
                     Pending
@@ -98,7 +61,7 @@ async function PendingBusinessTable() {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href={`/buy/${business.id}`}>View Details</a>
+                        <a href={`/business/${business.id}`}>View Details</a>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-green-600">Approve</DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">Reject</DropdownMenuItem>
@@ -122,11 +85,8 @@ function BusinessTableSkeleton() {
         <TableHeader>
           <TableRow>
             <TableHead>Business ID</TableHead>
-            <TableHead>Business Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Featured</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>Files</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Investment %</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -134,13 +94,18 @@ function BusinessTableSkeleton() {
         <TableBody>
           {[1, 2, 3].map((i) => (
             <TableRow key={i}>
-              <TableCell><Skeleton className="h-5 w-[80px]" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-[150px]" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-[80px]" /></TableCell>
-              <TableCell><Skeleton className="h-10 w-10 rounded-md" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-[50px]" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-[80px]" /></TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-[80px]" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-[200px]" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-[50px]" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-[80px]" />
+              </TableCell>
               <TableCell className="text-right">
                 <Skeleton className="h-8 w-8 rounded-full ml-auto" />
               </TableCell>

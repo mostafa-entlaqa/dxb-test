@@ -9,11 +9,11 @@ export async function middleware(req: NextRequest) {
   // Get session only for protected routes or auth routes
   const protectedRoutes = ['/dashboard', '/settings', '/buy', '/sell', '/business', '/profile', '/my-listings']
   const authRoutes = ['/login', '/signup', '/forgot-password']
-  
-  const isProtectedRoute = protectedRoutes.some(route => 
+
+  const isProtectedRoute = protectedRoutes.some(route =>
     req.nextUrl.pathname.startsWith(route)
   )
-  const isAuthRoute = authRoutes.some(route => 
+  const isAuthRoute = authRoutes.some(route =>
     req.nextUrl.pathname.startsWith(route)
   )
 

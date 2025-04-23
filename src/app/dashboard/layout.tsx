@@ -2,26 +2,22 @@ import React from 'react'
 import { getUserRole } from '../../actions/get-user-role'
 import { redirect } from 'next/navigation'
 export const dynamic = "force-dynamic";
+
 interface DashboardLayoutProps {
-    children: React.ReactNode
-    user: React.ReactNode
-    admin: React.ReactNode
+  children: React.ReactNode
+  user: React.ReactNode
+  admin: React.ReactNode
 }
 
 export default async function DashboardLayout({ children, user, admin }: DashboardLayoutProps) {
-  
   const { userRole, error } = await getUserRole()
-  
+
   // Handle error case
   if (error || !userRole) {
-    return redirect('/auth/login') // or wherever you want to redirect
+    return redirect('/auth/login')
   }
 
   // Render only the appropriate content based on role
-  return (
-    <div>
-      {userRole.role === 'admin' ? admin : user}
-    </div>
-  )
+  return userRole.role === 'admin' ? admin : user
 }
 
