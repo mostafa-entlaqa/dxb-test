@@ -1,129 +1,116 @@
-// import { Suspense } from "react"
-// import { DashboardLayout } from "@/components/layout/dashboard-layout"
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-// import { Building, CreditCard, Users } from "lucide-react"
-// import { getUsers } from "@/actions/admin/users"
-// import { getBusinesses } from "@/actions/admin/businesses"
-// import { getInvoices } from "@/actions/admin/invoices"
-// import { Skeleton } from "@/components/ui/skeleton"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, DollarSign, Activity, Building } from "lucide-react"
+import { getUsers } from "@/actions/admin/users"
+import { getBusinesses } from "@/actions/admin/businesses"
+import { getInvoices } from "@/actions/admin/invoices"
 
-// async function DashboardCards() {
-//   // Fetch data for dashboard cards
-//   const [users, pendingBusinesses, pendingInvoices] = await Promise.all([
-//     getUsers(),
-//     getBusinesses("pending"),
-//     getInvoices("pending"),
-//   ])
+function formatCurrency(amount: number, currency: string = "AED") {
+  return new Intl.NumberFormat("en-AE", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+}
 
-//   return (
-//     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-//       <Card>
-//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//           <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-//           <Users className="h-4 w-4 text-muted-foreground" />
-//         </CardHeader>
-//         <CardContent>
-//           <div className="text-2xl font-bold">{users.length}</div>
-//           <p className="text-xs text-muted-foreground">Active users in the system</p>
-//         </CardContent>
-//       </Card>
-//       <Card>
-//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//           <CardTitle className="text-sm font-medium">Pending Transactions</CardTitle>
-//           <CreditCard className="h-4 w-4 text-muted-foreground" />
-//         </CardHeader>
-//         <CardContent>
-//           <div className="text-2xl font-bold">{pendingInvoices.length}</div>
-//           <p className="text-xs text-muted-foreground">Requires attention</p>
-//         </CardContent>
-//       </Card>
-//       <Card>
-//         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//           <CardTitle className="text-sm font-medium">Business Applications</CardTitle>
-//           <Building className="h-4 w-4 text-muted-foreground" />
-//         </CardHeader>
-//         <CardContent>
-//           <div className="text-2xl font-bold">{pendingBusinesses.length}</div>
-//           <p className="text-xs text-muted-foreground">Pending approval</p>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   )
-// }
+export default async function DashboardPage() {
+  // Use server actions directly
+  const [users, businesses, invoices] = await Promise.all([
+    getUsers(),
+    getBusinesses(),
+    getInvoices()
+  ]);
 
-// function DashboardSkeleton() {
-//   return (
-//     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-//       {[1, 2, 3].map((i) => (
-//         <Card key={i}>
-//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//             <Skeleton className="h-5 w-[120px]" />
-//             <Skeleton className="h-4 w-4" />
-//           </CardHeader>
-//           <CardContent>
-//             <Skeleton className="h-8 w-[60px] mb-1" />
-//             <Skeleton className="h-4 w-[140px]" />
-//           </CardContent>
-//         </Card>
-//       ))}
-//     </div>
-//   )
-// }
+  // Case-insensitive status checks
+  const paidInvoices = invoices.filter(inv => String(inv.status).toLowerCase().trim() === "paid");
+  const pendingInvoices = invoices.filter(inv => String(inv.status).toLowerCase().trim() === "pending");
+  const failedInvoices = invoices.filter(inv => String(inv.status).toLowerCase().trim() === "failed");
 
-// export default function DashboardPage() {
-//   return (
-//     <DashboardLayout>
-//       <div className="flex items-center justify-between mb-6">
-//         <h2 className="text-2xl font-bold">Dashboard</h2>
-//       </div>
+  // Make sure amount is a number
+  const totalRevenue = paidInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  const currency = paidInvoices[0]?.currency || "AED";
 
-//       <Suspense fallback={<DashboardSkeleton />}>
-//         <DashboardCards />
-//       </Suspense>
-
-//       <div className="mt-6">
-//         <Tabs defaultValue="users">
-//           <TabsList>
-//             <TabsTrigger value="users">Recent Users</TabsTrigger>
-//             <TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
-//             <TabsTrigger value="business">Recent Business</TabsTrigger>
-//           </TabsList>
-//           <TabsContent value="users" className="mt-4">
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Recent User Activity</CardTitle>
-//                 <CardDescription>Overview of the latest user registrations and activities</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 <p>User activity content will appear here</p>
-//               </CardContent>
-//             </Card>
-//           </TabsContent>
-//           <TabsContent value="transactions" className="mt-4">
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Recent Transactions</CardTitle>
-//                 <CardDescription>Overview of the latest transaction activities</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 <p>Transaction activity content will appear here</p>
-//               </CardContent>
-//             </Card>
-//           </TabsContent>
-//           <TabsContent value="business" className="mt-4">
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Recent Business Applications</CardTitle>
-//                 <CardDescription>Overview of the latest business application activities</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 <p>Business application activity content will appear here</p>
-//               </CardContent>
-//             </Card>
-//           </TabsContent>
-//         </Tabs>
-//       </div>
-//     </DashboardLayout>
-//   )
-// }
+  return (
+    <DashboardLayout>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Dashboard</h2>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{users.length}</div>
+            <p className="text-xs text-muted-foreground">Active users in the system</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalRevenue, currency)}</div>
+            <p className="text-xs text-muted-foreground">From paid invoices</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Paid Transactions</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{paidInvoices.length}</div>
+            <p className="text-xs text-muted-foreground">Total paid transactions</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Business Applications</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{businesses.length}</div>
+            <p className="text-xs text-muted-foreground">Pending approval</p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Transaction Status</CardTitle>
+            <CardDescription>Overview of transaction statuses</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                  <span>Pending</span>
+                </div>
+                <span className="font-medium">{pendingInvoices.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <span>Paid</span>
+                </div>
+                <span className="font-medium">{paidInvoices.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-red-500" />
+                  <span>Failed</span>
+                </div>
+                <span className="font-medium">{failedInvoices.length}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+}
