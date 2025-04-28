@@ -27,7 +27,8 @@ async function UserTableContainer() {
 
 export default function UsersPage() {
     return (
-        <DashboardLayout>
+        <>
+        
             <div className="mb-6">
                 <h2 className="text-2xl font-bold">User Management</h2>
                 <p className="text-muted-foreground">
@@ -38,6 +39,6 @@ export default function UsersPage() {
             <Suspense fallback={<UserTableSkeleton />}>
                 <UserTableContainer />
             </Suspense>
-        </DashboardLayout>
+        </>
     )
 }

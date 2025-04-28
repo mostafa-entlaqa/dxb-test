@@ -27,7 +27,7 @@ async function BusinessTableContainer() {
 
 export default function BusinessPage() {
     return (
-        <DashboardLayout>
+        <>
             <div className="mb-6">
                 <h2 className="text-2xl font-bold">Business Management</h2>
                 <p className="text-muted-foreground">
@@ -38,6 +38,6 @@ export default function BusinessPage() {
             <Suspense fallback={<BusinessTableSkeleton />}>
                 <BusinessTableContainer />
             </Suspense>
-        </DashboardLayout>
+        </>
     )
 } 

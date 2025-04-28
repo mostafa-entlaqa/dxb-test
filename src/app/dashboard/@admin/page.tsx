@@ -5,6 +5,8 @@ import { getUsers } from "@/actions/admin/users"
 import { getBusinesses } from "@/actions/admin/businesses"
 import { getInvoices } from "@/actions/admin/invoices"
 
+export const dynamic = 'force-dynamic'
+
 function formatCurrency(amount: number, currency: string = "AED") {
   return new Intl.NumberFormat("en-AE", {
     style: "currency",
@@ -32,7 +34,7 @@ export default async function DashboardPage() {
   const currency = paidInvoices[0]?.currency || "AED";
 
   return (
-    <DashboardLayout>
+    <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Dashboard</h2>
       </div>
@@ -89,7 +91,7 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span>Pending</span>
+                  <span>Not Completed</span>
                 </div>
                 <span className="font-medium">{pendingInvoices.length}</span>
               </div>
@@ -100,17 +102,17 @@ export default async function DashboardPage() {
                 </div>
                 <span className="font-medium">{paidInvoices.length}</span>
               </div>
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-red-500" />
                   <span>Failed</span>
                 </div>
                 <span className="font-medium">{failedInvoices.length}</span>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

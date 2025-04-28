@@ -21,12 +21,14 @@ function InvoicesTableSkeleton() {
 
 async function InvoicesTableContainer() {
     const invoices = await getInvoices()
+    console.log(invoices)
     return <InvoicesTable data={invoices} />
 }
 
+
 export default function InvoicesPage() {
     return (
-        <DashboardLayout>
+        <>
             <div className="mb-6">
                 <h2 className="text-2xl font-bold">Invoice Management</h2>
                 <p className="text-muted-foreground">
@@ -37,6 +39,6 @@ export default function InvoicesPage() {
             <Suspense fallback={<InvoicesTableSkeleton />}>
                 <InvoicesTableContainer />
             </Suspense>
-        </DashboardLayout>
+        </>
     )
 } 

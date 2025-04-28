@@ -41,7 +41,7 @@ export function DashboardNav({ items }: DashboardNavProps) {
                             "justify-start"
                         )}
                     >
-                        <Icon className="mr-2 h-4 w-4" />
+                        {/* <Icon className="mr-2 h-4 w-4" /> */}
                         {item.title}
                     </Link>
                 )

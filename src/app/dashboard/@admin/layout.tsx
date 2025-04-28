@@ -1,4 +1,5 @@
 'use client'
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Sidebar, MobileSidebar } from "@/components/layout/sidebar"
 
 interface AdminLayoutProps {
@@ -16,9 +17,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     {/* Mobile Sidebar */}
                     <MobileSidebar />
                 </div>
-
-                <main className="flex-1 space-y-4 p-4 pt-6">
-                    {children}
+        
+                <main className="flex-1 space-y-4 p-4 px-6 py-3">
+                    <DashboardLayout>
+                        {children}
+                    </DashboardLayout>
                 </main>
             </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Calendar } from "lucide-react"
+import { MoreHorizontal, Calendar, Eye, CheckCircle, XCircle, Clock, Ban, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -165,7 +165,8 @@ export const columns: ColumnDef<Business>[] = [
         header: "Approved Date",
         cell: ({ row }) => {
             const date = row.getValue("approveAt") as string
-            return date ? format(new Date(date), 'MMM dd, yyyy') : '-'
+            return date ? <span className="text-xs">{format(new Date(date), 'MMM dd, yyyy')}</span> : '-'
+
         },
     },
     {
@@ -175,8 +176,8 @@ export const columns: ColumnDef<Business>[] = [
             const date = row.getValue("subscription_end_date") as string
             return date ? (
                 <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(date), 'MMM dd, yyyy')}
+                    {/* <Calendar className="h-4 w-4" /> */}
+                    <span className="text-xs">{format(new Date(date), 'MMM dd, yyyy')}</span>
                 </div>
             ) : '-'
         },
@@ -206,52 +207,51 @@ export const columns: ColumnDef<Business>[] = [
                             <span className="sr-only">Actions</span>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                            <a href={`/buy/${business.id}`}>View Details</a>
+                            <a href={`/buy/${business.id}`}>
+                                <Eye className="mr-2 h-4 w-4" /> View Details
+                            </a>
                         </DropdownMenuItem>
-                        {currentStatus !== 'approved' && (
-                            <DropdownMenuItem
-                                onClick={() => handleStatusUpdate('approved')}
-                                className="text-green-600"
-                            >
-                                Approve
-                            </DropdownMenuItem>
-                        )}
-                        {currentStatus !== 'rejected' && (
-                            <DropdownMenuItem
-                                onClick={() => handleStatusUpdate('rejected')}
-                                className="text-red-600"
-                            >
-                                Reject
-                            </DropdownMenuItem>
-                        )}
-                        {currentStatus !== 'pending' && (
-                            <DropdownMenuItem
-                                onClick={() => handleStatusUpdate('pending')}
-                                className="text-yellow-600"
-                            >
-                                Set as Pending
-                            </DropdownMenuItem>
-                        )}
-                        {currentStatus !== 'cancelled' && (
-                            <DropdownMenuItem
-                                onClick={() => handleStatusUpdate('cancelled')}
-                                className="text-gray-600"
-                            >
-                                Cancel
-                            </DropdownMenuItem>
-                        )}
-                        {currentStatus !== 'closed' && (
-                            <DropdownMenuItem
-                                onClick={() => handleStatusUpdate('closed')}
-                                className="text-blue-600"
-                            >
-                                Close
-                            </DropdownMenuItem>
-                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => handleStatusUpdate('approved')}
+                            className="text-green-600"
+                            disabled={currentStatus === 'approved'}
+                        >
+                            <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => handleStatusUpdate('rejected')}
+                            className="text-red-600"
+                            disabled={currentStatus === 'rejected'}
+                        >
+                            <XCircle className="mr-2 h-4 w-4" /> Reject
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => handleStatusUpdate('pending')}
+                            className="text-yellow-600"
+                            disabled={currentStatus === 'pending'}
+                        >
+                            <Clock className="mr-2 h-4 w-4" /> Set as Pending
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => handleStatusUpdate('cancelled')}
+                            className="text-gray-600"
+                            disabled={currentStatus === 'cancelled'}
+                        >
+                            <Ban className="mr-2 h-4 w-4" /> Cancel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => handleStatusUpdate('closed')}
+                            className="text-blue-600"
+                            disabled={currentStatus === 'closed'}
+                        >
+                            <Lock className="mr-2 h-4 w-4" /> Close
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )

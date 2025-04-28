@@ -74,9 +74,9 @@ export function FilterBusinessTable({ table }: FilterBusinessTableProps) {
                     </SelectContent>
                 </Select>
                 <Select
-                    value={(table.getColumn("type")?.getFilterValue() as string) ?? "all"}
+                    value={(table.getColumn("acquisition_type")?.getFilterValue() as string) ?? "all"}
                     onValueChange={(value) =>
-                        table.getColumn("type")?.setFilterValue(value === "all" ? "" : value)
+                        table.getColumn("acquisition_type")?.setFilterValue(value === "all" ? "" : value)
                     }
                 >
                     <SelectTrigger className="w-[150px]">
@@ -84,8 +84,8 @@ export function FilterBusinessTable({ table }: FilterBusinessTableProps) {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="investment">Investment</SelectItem>
-                        <SelectItem value="buy">Buy</SelectItem>
+                        <SelectItem value="Invest">Investment</SelectItem>
+                        <SelectItem value="Buy">Buy</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

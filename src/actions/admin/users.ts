@@ -18,11 +18,10 @@ export type UserWithCredits = User & {
   credits?: number
   ai_credits?: number
 }
-const supabase = getServerSupabase()  
-
 
 export async function getUsers(): Promise<UserWithCredits[]> {
   try {
+    const supabase = getServerSupabase()
     const { data: users, error } = await supabase.from("users").select("*")
 
     if (error) {
@@ -61,6 +60,7 @@ export async function getUsers(): Promise<UserWithCredits[]> {
 
 export async function getUserById(id: string): Promise<UserWithCredits | null> {
   try {
+    const supabase = getServerSupabase()
     const { data: user, error } = await supabase.from("users").select("*").eq("id", id).single()
 
     if (error) {
@@ -93,6 +93,7 @@ export async function getUserById(id: string): Promise<UserWithCredits | null> {
 
 export async function updateUser(id: string, userData: Partial<User>): Promise<User> {
   try {
+    const supabase = getServerSupabase()
     const { data, error } = await supabase.from("users").update(userData).eq("id", id).select().single()
 
     if (error) {
@@ -112,6 +113,7 @@ export async function updateUser(id: string, userData: Partial<User>): Promise<U
 
 export async function updateUserCredits(userId: string, credits: number, aiCredits?: number): Promise<void> {
   try {
+    const supabase = getServerSupabase()
     const { data: existingCredits, error: fetchError } = await supabase
       .from("users_credits")
       .select("*")
@@ -171,6 +173,7 @@ export async function updateUserCredits(userId: string, credits: number, aiCredi
 export async function deleteUser(id: string): Promise<void> {
   try {
     // Delete user credits first (if they exist)
+    const supabase = getServerSupabase()
     await supabase.from("users_credits").delete().eq("user_id", id)
 
     // Then delete the user

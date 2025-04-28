@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { getServerSupabase } from '@/lib/supabase/utils'
+import { getServerSupabase } from "@/lib/supabase/server"
 
 export type Business = {
   id: string

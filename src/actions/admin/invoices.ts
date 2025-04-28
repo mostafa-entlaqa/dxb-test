@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { getServerSupabase } from '@/lib/supabase/utils'
+import { getServerSupabase } from "@/lib/supabase/server"
 
 export type Invoice = {
   id: string
@@ -22,67 +22,84 @@ export type Invoice = {
   }
 }
 
-export async function getInvoices() {
-  const supabase = getServerSupabase()
+export async function getInvoices(): Promise<Invoice[]> {
+  try {
+    const supabase = getServerSupabase()
+    const { data: invoices, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .order("created_at", { ascending: false })
 
-  // First get all invoices
-  const { data: invoices, error: invoicesError } = await supabase
-    .from('invoices')
-    .select()
-    .order('created_at', { ascending: false })
+    if (error) {
+      console.error("Error fetching invoices:", error)
+      throw new Error("Failed to fetch invoices")
+    }
 
-  if (invoicesError) throw invoicesError
-  if (!invoices) return []
+    if (!invoices) return []
 
-  // Then get all referenced users
-  const userIds = [...new Set(invoices.map(invoice => invoice.user_id))]
-  const { data: users, error: usersError } = await supabase
-    .from('users')
-    .select('id, email, full_name, profile_pic_url')
-    .in('id', userIds)
+    // Get all unique user IDs
+    const userIds = [...new Set(invoices.map(invoice => invoice.user_id))]
 
-  if (usersError) throw usersError
-  if (!users) return invoices
+    // Get user details for all users
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("id, email, full_name, profile_pic_url")
+      .in("id", userIds)
 
-  // Merge the data
-  const usersMap = new Map(users.map(user => [user.id, user]))
-  const invoicesWithUsers = invoices.map(invoice => ({
-    ...invoice,
-    user_details: usersMap.get(invoice.user_id) || null
-  }))
+    if (usersError) {
+      console.error("Error fetching users:", usersError)
+      throw new Error("Failed to fetch user details")
+    }
 
-  return invoicesWithUsers
-}
+    // Create a map of user details
+    const userMap = new Map(users?.map(user => [user.id, user]) || [])
 
-export async function getInvoiceById(id: string) {
-  const supabase = getServerSupabase()
-
-  // Get the invoice
-  const { data: invoice, error: invoiceError } = await supabase
-    .from('invoices')
-    .select()
-    .eq('id', id)
-    .single()
-
-  if (invoiceError) throw invoiceError
-  if (!invoice) return null
-
-  // Get the user details
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('id, email, full_name, avatar_url')
-    .eq('id', invoice.user_id)
-    .single()
-
-  if (userError) throw userError
-
-  return {
-    ...invoice,
-    user_details: user || null
+    // Combine invoices with user details
+    return invoices.map(invoice => ({
+      ...invoice,
+      user_details: userMap.get(invoice.user_id) || null
+    }))
+  } catch (error) {
+    console.error("Error in getInvoices:", error)
+    throw error
   }
 }
 
-export async function getInvoicesByUserId(userId: string) {
+export async function getInvoiceById(id: string): Promise<Invoice | null> {
+  try {
+    const supabase = getServerSupabase()
+    const { data: invoice, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("id", id)
+      .single()
+
+    if (error) {
+      console.error("Error fetching invoice:", error)
+      throw new Error("Failed to fetch invoice")
+    }
+
+    if (!invoice) return null
+
+    // Get user details
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id, email, full_name, profile_pic_url")
+      .eq("id", invoice.user_id)
+      .single()
+
+    // If user is not found, user will be null
+    return {
+      ...invoice,
+      user_details: user || null
+    }
+  } catch (error) {
+    console.error("Error in getInvoiceById:", error)
+    throw error
+  }
+}
+
+export async function z(userId: string) {
   const supabase = getServerSupabase()
 
   // Get invoices for user
@@ -111,15 +128,27 @@ export async function getInvoicesByUserId(userId: string) {
   }))
 }
 
-export async function updateInvoiceStatus(id: string, status: Invoice['status']) {
-  const supabase = getServerSupabase()
-  const { error } = await supabase
-    .from('invoices')
-    .update({ status })
-    .eq('id', id)
+export async function updateInvoiceStatus(id: string, status: "pending" | "paid" | "failed"): Promise<Invoice> {
+  try {
+    const supabase = getServerSupabase()
+    const { data, error } = await supabase
+      .from("invoices")
+      .update({ status })
+      .eq("id", id)
+      .select()
+      .single()
 
-  if (error) throw error
-  revalidatePath('/dashboard/invoices')
+    if (error) {
+      console.error("Error updating invoice status:", error)
+      throw new Error("Failed to update invoice status")
+    }
+
+    revalidatePath("/dashboard/@admin")
+    return data
+  } catch (error) {
+    console.error("Error in updateInvoiceStatus:", error)
+    throw error
+  }
 }
 
 export async function createInvoice(data: Omit<Invoice, "id" | "created_at" | "updated_at" | "user_details">) {
@@ -135,27 +164,42 @@ export async function createInvoice(data: Omit<Invoice, "id" | "created_at" | "u
   return newInvoice
 }
 
-export async function updateInvoice(id: string, data: Partial<Omit<Invoice, "user_details">>) {
-  const supabase = getServerSupabase()
-  const { data: updatedInvoice, error } = await supabase
-    .from('invoices')
-    .update(data)
-    .eq('id', id)
-    .select()
-    .single()
+export async function updateInvoice(id: string, invoiceData: Partial<Invoice>): Promise<Invoice> {
+  try {
+    const supabase = getServerSupabase()
+    const { data, error } = await supabase
+      .from("invoices")
+      .update(invoiceData)
+      .eq("id", id)
+      .select()
+      .single()
 
-  if (error) throw error
-  revalidatePath('/dashboard/invoices')
-  return updatedInvoice
+    if (error) {
+      console.error("Error updating invoice:", error)
+      throw new Error("Failed to update invoice")
+    }
+
+    revalidatePath("/dashboard/@admin")
+    return data
+  } catch (error) {
+    console.error("Error in updateInvoice:", error)
+    throw error
+  }
 }
 
-export async function deleteInvoice(id: string) {
-  const supabase = getServerSupabase()
-  const { error } = await supabase
-    .from('invoices')
-    .delete()
-    .eq('id', id)
+export async function deleteInvoice(id: string): Promise<void> {
+  try {
+    const supabase = getServerSupabase()
+    const { error } = await supabase.from("invoices").delete().eq("id", id)
 
-  if (error) throw error
-  revalidatePath('/dashboard/invoices')
+    if (error) {
+      console.error("Error deleting invoice:", error)
+      throw new Error("Failed to delete invoice")
+    }
+
+    revalidatePath("/dashboard/@admin")
+  } catch (error) {
+    console.error("Error in deleteInvoice:", error)
+    throw error
+  }
 }

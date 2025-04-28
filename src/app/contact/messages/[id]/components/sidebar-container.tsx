@@ -1,10 +1,8 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { getCategoryById } from '@/actions/user/bussiness-list/get-category-by-id'
-import { getAreaById } from '@/actions/user/bussiness-list/get-area-by-id'
 import { SidebarClient } from './sidebar'
 import { getServerSupabase } from '@/lib/supabase/utils'
 import { BusinessDetails, Message, Business, BuyerStatus } from '../type'
+
+export const dynamic = 'force-dynamic'
 
 export async function SidebarContainer({ 
   businessId,

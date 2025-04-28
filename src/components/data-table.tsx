@@ -17,6 +17,7 @@ import {
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -27,6 +28,8 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({ columns, data, renderToolbar }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [pageSize, setPageSize] = useState(5)
+    const [pageIndex, setPageIndex] = useState(0)
 
     const table = useReactTable({
         data,
@@ -40,8 +43,28 @@ export function DataTable<TData, TValue>({ columns, data, renderToolbar }: DataT
         state: {
             sorting,
             columnFilters,
+            pagination: {
+                pageIndex,
+                pageSize,
+            },
+        },
+        onPaginationChange: updater => {
+            if (typeof updater === "function") {
+                const newState = updater({ pageIndex, pageSize })
+                setPageIndex(newState.pageIndex ?? 0)
+                setPageSize(newState.pageSize ?? 5)
+            } else if (typeof updater === "object") {
+                if (typeof updater.pageIndex === "number") setPageIndex(updater.pageIndex)
+                if (typeof updater.pageSize === "number") setPageSize(updater.pageSize)
+            }
         },
     })
+
+    // When pageSize changes, reset to first page
+    const handlePageSizeChange = (size: number) => {
+        setPageSize(size)
+        setPageIndex(0)
+    }
 
     return (
         <div>
@@ -80,13 +103,33 @@ export function DataTable<TData, TValue>({ columns, data, renderToolbar }: DataT
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                    Previous
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                    Next
-                </Button>
+            <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-2">
+                    <span>Rows per page:</span>
+                    <Select value={String(pageSize)} onValueChange={val => handlePageSizeChange(Number(val))}>
+                        <SelectTrigger className="w-20">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[5, 10, 20, 50].map(size => (
+                                <SelectItem key={size} value={String(size)}>
+                                    {size}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                        Previous
+                    </Button>
+                    <span>
+                        Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                        Next
+                    </Button>
+                </div>
             </div>
         </div>
     )
