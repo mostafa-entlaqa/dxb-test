@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    // @ts-ignore
-     apiVersion: '2024-12-18.acacia'
+    apiVersion: '2025-02-24.acacia'
 })
 
 export async function POST(request: Request) {
@@ -20,7 +19,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        console.log('User ID:', user.id)
+        const { data: paidPostPrice, error: paidPostPriceError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'paid_post_price')
+        .single()
+
+        console.log('paidPostPrice', paidPostPrice?.value)
+
+        if (paidPostPriceError) {
+            console.error('Paid post price fetch error:', paidPostPriceError)
+            return NextResponse.json({ error: 'Failed to fetch paid post price' }, { status: 500 })
+        }
+        
+
 
         // Get business details
         const { data: business, error: businessError } = await supabase
@@ -30,6 +42,8 @@ export async function POST(request: Request) {
             .eq('user_id', user.id)
             .single()
 
+        
+
         if (businessError || !business) {
             console.error('Business fetch error:', businessError)
             return NextResponse.json(
@@ -37,6 +51,9 @@ export async function POST(request: Request) {
                 { status: 404 }
             )
         }
+
+
+        
 
         // Check if there's already a paid invoice
         // const { data: existingInvoice, error: invoiceError } = await supabase
@@ -68,7 +85,7 @@ export async function POST(request: Request) {
                             name: 'Business Feature Upgrade',
                             description: `Upgrade for Business #${businessId}`,
                         },
-                        unit_amount: 1499 * 100, // 1,499 AED
+                        unit_amount: Number(paidPostPrice?.value) * 100, // 1,499 AED
                     },
                     quantity: 1,
                 },
@@ -78,15 +95,16 @@ export async function POST(request: Request) {
             cancel_url: `${baseUrl}/my-listings?canceled=true`,
             metadata: {
                 businessId: businessId.toString(),
-                user_id: user.id
+                user_id: user.id,
+                payment_type: 'business_upgrade'
             },
             customer_email: user.email,
         })
 
-        console.log('Created checkout session:', {
-            sessionId: checkoutSession.id,
-            businessId: businessId,
-            metadata: checkoutSession.metadata
+        console.log('Creating invoice with data:', {
+            user_id: user.id,
+            business_id: businessId,
+            amount: 1499
         })
 
         // Create a pending invoice
@@ -94,24 +112,40 @@ export async function POST(request: Request) {
             .from('invoices')
             .insert({
                 user_id: user.id,
-                business_id: parseInt(businessId), // Convert to number since business.id is BIGINT
                 amount: 1499,
                 currency: 'AED',
-                status: 'pending',
-                stripe_invoice_id: checkoutSession.id // Store session ID here
+                status: 'pending'
             })
             .select()
             .single()
 
         if (createInvoiceError) {
-            console.error('Failed to create invoice:', createInvoiceError)
+            console.error('Detailed invoice creation error:', {
+                error: createInvoiceError,
+                code: createInvoiceError.code,
+                details: createInvoiceError.details,
+                hint: createInvoiceError.hint,
+                message: createInvoiceError.message
+            })
             return NextResponse.json(
-                { error: 'Failed to create invoice' },
+                { error: `Failed to create invoice: ${createInvoiceError.message}` },
                 { status: 500 }
             )
         }
 
-        console.log('Created invoice:', invoice)
+        console.log('Invoice created successfully:', invoice)
+
+        // Update invoice with Stripe session ID
+        const { error: updateError } = await supabase
+            .from('invoices')
+            .update({
+                stripe_invoice_id: checkoutSession.id
+            })
+            .eq('id', invoice.id)
+
+        if (updateError) {
+            console.error('Failed to update invoice with session ID:', updateError)
+        }
 
         return NextResponse.json({
             url: checkoutSession.url,
@@ -120,7 +154,7 @@ export async function POST(request: Request) {
         })
 
     } catch (error: any) {
-        console.error('Error creating checkout session:', error)
+        console.error('Checkout session error:', error)
         return NextResponse.json(
             { error: error.message || 'Failed to create checkout session' }, 
             { status: 500 }

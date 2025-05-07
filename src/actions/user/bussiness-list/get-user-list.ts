@@ -7,11 +7,12 @@ type BusinessType = {
     opportunity_name: string
     form_status: string
     approve: Date | null
+    user_messages_count: number
 }
 
 export const getUserList = async () => {
 
-    const supabase =  getServerSupabase()
+    const supabase = getServerSupabase()
     const { data: { user } } = await supabase.auth.getUser()
 
     // Check if user and user.id are valid
@@ -25,17 +26,23 @@ export const getUserList = async () => {
         console.log(error)
     }
 
-    // Get unlock counts for each business
+    // Get unlock counts and user messages for each business
     const enhancedBusinessData = await Promise.all(
         businessUserData?.map(async (business) => {
-            const { count } = await supabase
+            const { count: unlockCount } = await supabase
                 .from('unlocked_businesses')
                 .select('*', { count: 'exact' })
                 .eq('business_id', business.id);
-            
+
+            const { count: userMessagesCount } = await supabase
+                .from('buyer_status')
+                .select('*', { count: 'exact' })
+                .eq('business_id', business.id);
+
             return {
                 ...business,
-                views_count: count || 0
+                views_count: unlockCount || 0,
+                user_messages_count: userMessagesCount ? userMessagesCount - 1 : 0
             };
         }) || []
     );
@@ -44,5 +51,3 @@ export const getUserList = async () => {
         businessUserData: enhancedBusinessData
     }
 }
-
-

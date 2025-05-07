@@ -86,13 +86,13 @@ export function UserMenu({ user }: UserMenuProps) {
           <UserCircle className="h-4 w-4 mr-2" />
           Profile
         </DropdownMenuItem>
-        <DropdownMenuItem
+        {/* <DropdownMenuItem
           onClick={() => router.push('/settings/password')}
           className="cursor-pointer flex items-center"
         >
           <KeyRound className="h-4 w-4 mr-2" />
           Change Password
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
         <DropdownMenuItem
           onClick={() => router.push('/my-listings')}
           className="cursor-pointer flex items-center"

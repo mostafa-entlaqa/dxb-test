@@ -6,6 +6,8 @@ import { getServerSupabase } from '@/lib/supabase/utils'
 import { getCategoryById } from '@/actions/user/bussiness-list/get-category-by-id'
 import { getAreaById } from '@/actions/user/bussiness-list/get-area-by-id'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MessagesPage({ params, searchParams }: { 
   params: { id: string },
   searchParams: { buyer?: string }

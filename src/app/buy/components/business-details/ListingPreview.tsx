@@ -14,6 +14,7 @@ import AIAnalysis from "./AIAnalysis"
 import { Business, Category, Area } from "../../type"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface ListingPreviewProps {
   business: Business
@@ -271,6 +272,19 @@ export default function ListingPreview({
                   <Mail className="mr-2"  />
                   Contact Seller
                 </Button>
+
+                
+          
+          <Link href="/buy ">
+          
+                <Button
+                  variant={"link"}
+                  className="w-full mt-4 text-blue-600 hover:text-blue-700"
+                >
+                  Get more credits
+                </Button>
+          </Link>
+
               </div>
             </CardContent>
           </Card>

@@ -7,12 +7,12 @@ import { getCategoryById } from '@/actions/user/bussiness-list/get-category-by-i
 import { getAreaById } from '@/actions/user/bussiness-list/get-area-by-id'
 import { redirect } from 'next/navigation'
 
-export default async function MessagesPage({ params, searchParams }: { 
+export default async function MessagesPage({ params, searchParams }: {
   params: { id: string },
   searchParams: { buyer?: string }
 }) {
   const supabase = getServerSupabase()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
@@ -77,19 +77,21 @@ export default async function MessagesPage({ params, searchParams }: {
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       <Suspense fallback={<div className="w-64" />}>
-        <SidebarContainer 
-          businessId={params.id} 
-          business={processedBusiness} 
-          className="w-64 border-r border-border" 
+        <SidebarContainer
+          businessId={params.id}
+          business={processedBusiness}
+          className="w-64 border-r border-border"
         />
       </Suspense>
       <div className="flex flex-col flex-1">
         <BusinessOpportunityHeader business={processedBusiness} className="border-b border-border" />
-        <MessageThread 
-          businessId={params.id} 
-          buyerId={buyerId} 
+        <MessageThread
+          businessId={params.id}
+          buyerId={buyerId}
           initialMessages={initialMessages ? initialMessages : []}
-          className="flex-1" 
+          className="flex-1"
+          currentBuyerId={searchParams.buyer}
+          businessOwnerId={business.user_id}
         />
       </div>
     </div>

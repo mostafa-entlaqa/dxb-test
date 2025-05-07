@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getServerSupabase } from '@/lib/supabase/utils'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -8,7 +8,7 @@ export async function uploadFile(
   formData: FormData,
   bucket: string
 ): Promise<string | null> {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = getServerSupabase()
   
   const file = formData.get('file') as File
   if (!file) {
@@ -55,7 +55,7 @@ export async function uploadImages(
   formData: FormData,
   bucket: string
 ): Promise<string[]> {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = getServerSupabase()
   const imageUrls: string[] = []
   const files = formData.getAll('files') as File[]
 

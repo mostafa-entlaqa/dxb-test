@@ -9,11 +9,11 @@ import { BusinessDetails, Message, Business, BuyerStatus } from '../type'
 export async function SidebarContainer({ 
   businessId,
   business,
-  className 
+  className,
 }: { 
   businessId: string
   business: BusinessDetails
-  className?: string 
+  className?: string
 }) {
   const supabase = getServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()

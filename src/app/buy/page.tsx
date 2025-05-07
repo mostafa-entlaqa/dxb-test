@@ -5,6 +5,7 @@ import { Building2, ArrowDownWideNarrow, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInsights } from '@/actions/user/buy/get-insights'
 import { getFilterOptions } from '@/actions/user/buy/get-filter-options'
+import { CreditsPricing } from './components/credits-pricing'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,7 +64,13 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Buy a Business</h1>
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      
+      {/* Credits Pricing Section */}
+      <div className="mb-12">
+        <CreditsPricing />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {insightCards.map((card, index) => (
           <div 
             key={index}
@@ -78,7 +85,6 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
         ))}
       </div>
       <div className="flex justify-between items-center mb-8">
-        
         <BusinessFilters 
           initialFilters={filters} 
           initialCategories={filterOptions.categories}
@@ -86,7 +92,6 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
         />
       </div>
 
-      
       <Suspense fallback={
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (

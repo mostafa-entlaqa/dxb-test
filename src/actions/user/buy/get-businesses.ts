@@ -1,8 +1,9 @@
 'use server'
 
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+
 import { cookies } from 'next/headers'
 import { client as openai } from '@/utils/openai'
+import { getServerSupabase } from '@/lib/supabase/server'
 
 interface BusinessCategory {
   id: number
@@ -78,7 +79,7 @@ async function generateAIContent(businessName: string, location: string) {
 }
 
 export async function getBusinesses(filters: FilterParams): Promise<BusinessResponse> {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = getServerSupabase()
   
   try {
     const from = ((filters?.page || 1) - 1) * 12

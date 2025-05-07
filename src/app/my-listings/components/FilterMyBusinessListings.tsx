@@ -3,11 +3,11 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { ColumnDef, Table } from "@tanstack/react-table"
+import type { Table } from "@tanstack/react-table"
 import { BusinessTypeCol } from "../columns"
 
 interface FilterMyBusinessListingsProps {
-    table: Table<ColumnDef<BusinessTypeCol>>
+    table: Table<BusinessTypeCol>
 }
 
 export function FilterMyBusinessListings({ table }: FilterMyBusinessListingsProps) {
@@ -15,13 +15,23 @@ export function FilterMyBusinessListings({ table }: FilterMyBusinessListingsProp
     const [statusFilter, setStatusFilter] = useState("all")
 
     useEffect(() => {
-        // Apply filters whenever searchTerm or statusFilter changes
+        // Set search filter on opportunity_name
         table.getColumn("opportunity_name")?.setFilterValue(searchTerm)
 
+        // Set status filters based on statusFilter value
         if (statusFilter === "all") {
-            table.getColumn("form_status")?.setFilterValue("")
-        } else {
-            table.getColumn("form_status")?.setFilterValue(statusFilter)
+            // For "all", just exclude "close" status
+            table.getColumn("approve_status")?.setFilterValue("!close")
+            table.getColumn("form_status")?.setFilterValue('')
+        } else if (statusFilter === "Published") {
+            table.getColumn("form_status")?.setFilterValue("published")
+            table.getColumn("approve_status")?.setFilterValue("!close")
+        } else if (statusFilter === "Draft") {
+            table.getColumn("form_status")?.setFilterValue("Draft")
+            table.getColumn("approve_status")?.setFilterValue("!close")
+        } else if (statusFilter === "close") {
+            table.getColumn("approve_status")?.setFilterValue("close")
+            table.getColumn("form_status")?.setFilterValue(undefined)
         }
     }, [table, searchTerm, statusFilter])
 
@@ -35,18 +45,25 @@ export function FilterMyBusinessListings({ table }: FilterMyBusinessListingsProp
 
     return (
         <div className="flex items-center justify-between py-4">
-            <Input placeholder="Search businesses..." value={searchTerm} onChange={handleSearch} className="max-w-sm" />
-            <Select value={statusFilter} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="Published">Published</SelectItem>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                </SelectContent>
-            </Select>
+            <Input
+                placeholder="Search businesses..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="max-w-sm"
+            />
+            <div className="flex gap-4">
+                <Select value={statusFilter} onValueChange={handleStatusChange}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="Published">Published</SelectItem>
+                        <SelectItem value="Draft">Draft</SelectItem>
+                        <SelectItem value="close">Closed</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
     )
 }
-
