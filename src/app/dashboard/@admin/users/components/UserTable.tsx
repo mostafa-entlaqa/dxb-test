@@ -51,6 +51,7 @@ export function UserTable({ data }: UserTableProps) {
             <DataTable
                 columns={columns}
                 data={filteredData}
+                tableName="users"
             />
         </div>
     )

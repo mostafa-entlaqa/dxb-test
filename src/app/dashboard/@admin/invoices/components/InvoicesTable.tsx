@@ -15,6 +15,7 @@ export function InvoicesTable({ data }: InvoicesTableProps) {
             columns={columns}
             data={data}
             renderToolbar={(table) => <FilterInvoicesTable table={table} />}
+            tableName="invoices"
         />
     )
 } 

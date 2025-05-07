@@ -18,14 +18,16 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ExportButton } from "@/components/export-button"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     renderToolbar?: (table: any) => React.ReactNode
+    tableName?: string
 }
 
-export function DataTable<TData, TValue>({ columns, data, renderToolbar }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, renderToolbar, tableName }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [pageSize, setPageSize] = useState(5)
@@ -66,9 +68,36 @@ export function DataTable<TData, TValue>({ columns, data, renderToolbar }: DataT
         setPageIndex(0)
     }
 
+    // Get visible columns for export
+    const visibleColumns = table.getVisibleFlatColumns().map(col => {
+        let getExportValue: ((row: any) => any) | undefined = undefined
+        // Custom export logic for Customer column
+        if (col.id === 'user_details') {
+            getExportValue = (row: any) => {
+                const user = row.user_details
+                return user?.full_name || row.full_name || ''
+            }
+        }
+        return {
+            id: col.id,
+            header: typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
+            accessorKey: (col.columnDef as any).accessorKey,
+            getExportValue
+        }
+    })
+    const rowModel = table.getRowModel().rows
+
     return (
         <div>
-            {renderToolbar && renderToolbar(table)}
+           <div className="flex my-2 items-center justify-between">
+           {renderToolbar ? renderToolbar(table) : <div></div>}
+           <ExportButton 
+                    columns={visibleColumns}
+                    data={data}
+                    filename={tableName ? `${tableName}.xlsx` : "data.xlsx"}
+                />
+            </div>
+
             <div className="rounded-md border ">
                 <Table>
                     <TableHeader className="bg-primary text-white dark:bg-blue-600 hover:bg-primary">

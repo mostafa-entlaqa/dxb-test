@@ -89,7 +89,6 @@ export function FilterBusinessTable({ table }: FilterBusinessTableProps) {
                     </SelectContent>
                 </Select>
             </div>
-            <Button>Export</Button>
         </div>
     )
 } 

@@ -17,6 +17,7 @@ export function BusinessTable({ data }: BusinessTableProps) {
             data={data}
             columns={columns}
             renderToolbar={(table) => <FilterBusinessTable table={table} />}
+            tableName="businesses"
         />
     )
 } 

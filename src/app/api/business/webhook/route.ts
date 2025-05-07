@@ -91,7 +91,6 @@ export async function POST(request: Request) {
                 // }
 
 
-                    console.log('currentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCreditscurrentCredits', currentCredits)
                 // Calculate new credit amounts
                 const newCredits = (currentCredits?.credits || 0) + 20
                 const newAiCredits = (currentCredits?.ai_credits || 0) + 20
