@@ -14,6 +14,7 @@ import {
   Settings,
   Users,
   LogOut,
+  MessageCircle,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -80,6 +81,16 @@ export function Sidebar({ className }: SidebarProps) {
               >
                 <CreditCard className="h-4 w-4" />
                 Invoices
+              </Link>
+              <Link
+                href="/dashboard/messages"
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  pathname === "/dashboard/messages" ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+                )}
+              >
+                <MessageCircle className="h-4 w-4" />
+                Messages
               </Link>
             </nav>
           </ScrollArea>

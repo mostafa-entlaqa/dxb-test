@@ -74,15 +74,7 @@ export default async function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium">Email Verification</p>
-                    <p className="text-xs text-muted-foreground">
-                      {userProfile.email_verified ? "Verified" : "Not verified"}
-                    </p>
-                  </div>
-                </div>
+              
 
                 <div className="flex items-center">
                   <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
