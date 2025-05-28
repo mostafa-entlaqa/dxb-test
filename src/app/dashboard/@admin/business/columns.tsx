@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Calendar, Eye, CheckCircle, XCircle, Clock, Ban, Lock } from "lucide-react"
+import { MoreHorizontal, Calendar, Eye, CheckCircle, XCircle, Clock, Ban, Lock, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -12,7 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { updateBusinessStatus, updateBusinessFeatured } from "@/actions/admin/businesses"
+import { updateBusinessStatus, updateBusinessFeatured, approveBusinessWithSubscription } from "@/actions/admin/businesses"
 import { toast } from "sonner"
 import { format } from "date-fns"
 
@@ -109,6 +109,7 @@ export const columns: ColumnDef<Business>[] = [
                 try {
                     await updateBusinessFeatured(business.id, !featured)
                     toast.success(`Business ${featured ? 'unfeatured' : 'featured'} successfully`)
+
                 } catch (error) {
                     toast.error('Failed to update featured status')
                 }
@@ -162,7 +163,7 @@ export const columns: ColumnDef<Business>[] = [
 
     {
         accessorKey: "approveAt",
-        header: "Approved Date",
+        header: "Approved",
         cell: ({ row }) => {
             const date = row.getValue("approveAt") as string
             return date ? <span className="text-xs">{format(new Date(date), 'MMM dd, yyyy')}</span> : '-'
@@ -171,7 +172,7 @@ export const columns: ColumnDef<Business>[] = [
     },
     {
         accessorKey: "subscription_end_date",
-        header: "Sub. End Date",
+        header: "Sub. End",
         cell: ({ row }) => {
             const date = row.getValue("subscription_end_date") as string
             return date ? (
@@ -182,7 +183,24 @@ export const columns: ColumnDef<Business>[] = [
             ) : '-'
         },
     },
-
+    {
+        accessorKey: "created_at",
+        header: ({ column }) => (
+            <button
+                className="flex items-center gap-1 font-semibold hover:text-primary"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Created
+                <ArrowUpDown className="ml-1 h-4 w-4" />
+            </button>
+        ),
+        cell: ({ row }) => {
+            const date = row.getValue("created_at") as string
+            return date ? <span className="text-xs">{format(new Date(date), 'MMM dd, yyyy')}</span> : '-'
+        },
+        size: 120,
+        enableSorting: true,
+    },
     {
         id: "actions",
         size: 60,
@@ -192,10 +210,14 @@ export const columns: ColumnDef<Business>[] = [
 
             const handleStatusUpdate = async (newStatus: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'closed') => {
                 try {
-                    await updateBusinessStatus(business.id, newStatus)
-                    toast.success(`Business ${newStatus} successfully`)
+                    if (newStatus === 'approved') {
+                        await approveBusinessWithSubscription(business.id, business.Featured);
+                    } else {
+                        await updateBusinessStatus(business.id, newStatus);
+                    }
+                    toast.success(`Business ${newStatus} successfully`);
                 } catch (error) {
-                    toast.error(`Failed to ${newStatus} business`)
+                    toast.error(`Failed to ${newStatus} business`);
                 }
             }
 

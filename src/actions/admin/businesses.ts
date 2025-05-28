@@ -173,3 +173,46 @@ export async function updateBusinessFeatured(id: string, Featured: boolean) {
     throw error
   }
 }
+
+export async function approveBusinessWithSubscription(
+  id: string,
+  featured: boolean
+): Promise<void> {
+  try {
+    const supabase = getServerSupabase();
+    const now = new Date().toISOString();
+
+    // Fetch the current business to check subscription_end_date
+    const { data: business, error: fetchError } = await supabase
+      .from('businesses')
+      .select('subscription_end_date')
+      .eq('id', id)
+      .single();
+    if (fetchError) {
+      console.error('Error fetching business for subscription check:', fetchError);
+      throw new Error('Failed to fetch business for subscription check');
+    }
+
+    let updateData: any = {
+      approve_status: 'approved',
+      approveAt: now,
+    };
+    if (featured && !business?.subscription_end_date) {
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 30);
+      updateData.subscription_end_date = expirationDate.toISOString();
+    }
+    const { error } = await supabase
+      .from('businesses')
+      .update(updateData)
+      .eq('id', id);
+    if (error) {
+      console.error('Error approving business with subscription:', error);
+      throw new Error('Failed to approve business with subscription');
+    }
+    revalidatePath('/dashboard/business');
+  } catch (error) {
+    console.error('Error in approveBusinessWithSubscription:', error);
+    throw error;
+  }
+}

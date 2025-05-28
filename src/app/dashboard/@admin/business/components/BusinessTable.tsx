@@ -10,8 +10,7 @@ interface BusinessTableProps {
 }
 
 export function BusinessTable({ data }: BusinessTableProps) {
-
-    console.log('data', data)
+    
     return (
         <DataTable
             data={data}

@@ -42,7 +42,7 @@ export default function BusinessListingWizard({
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
   const sessionId = searchParams.get('session_id')
-  
+
 
   const methods = useForm<FormData>({
     resolver: zodResolver(formBusinessSchema),
@@ -56,10 +56,10 @@ export default function BusinessListingWizard({
       financialStatement: ''
     }
   })
-  
-  console.log(methods.getValues('category_id'),'categories')
+
+  console.log(methods.getValues('category_id'), 'categories')
   useEffect(() => {
-    
+
     const savedData = sessionStorage.getItem('businessListingForm')
     if (savedData) {
       try {
@@ -67,7 +67,7 @@ export default function BusinessListingWizard({
         Object.keys(parsedData).forEach(key => {
           methods.setValue(key as keyof FormData, parsedData[key])
         })
-        if(!success) {
+        if (!success) {
           methods.setValue('listingType', 'free')
         }
       } catch (error) {
@@ -85,7 +85,7 @@ export default function BusinessListingWizard({
             },
             body: JSON.stringify({ sessionId })
           })
-          
+
           methods.setValue('listingType', 'paid')
 
           if (!response.ok) {
@@ -93,7 +93,7 @@ export default function BusinessListingWizard({
           }
 
           const session = await response.json()
-          
+
           if (session.payment_status === 'paid') {
             const { error } = await supabase.from('invoices').insert({
               user_id: session.metadata.userId,
@@ -134,12 +134,12 @@ export default function BusinessListingWizard({
 
     const fields = getFieldsForStep(step)
     const isValid = await methods.trigger(fields)
-    
+
     const handleNextStep = (TheStep: number) => {
       setStep(TheStep)
       sessionStorage.setItem('step', TheStep.toString())
     }
-    
+
     if (isValid) {
       if (step < 5) {
         const formData = methods.getValues()
@@ -154,27 +154,27 @@ export default function BusinessListingWizard({
 
           let finalBusinessName = data.businessName;
           let finalDescription = data.description;
-          if (!isPaid) {
-            const selectedCategory = categories.find((cat) => cat.id === Number(methods.getValues('category_id')))
-            console.log(selectedCategory,'selectedCategory')
-            const aiContent = await fetch('/api/generate-business-content', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                businessName: data.businessName,
-                sellingPrice: data.sellingPrice,
-                profitMargin: data.profitMargin,
-                category: selectedCategory?.name
-              })
-            }).then(res => res.json());
 
-            if (aiContent && !aiContent.error) {
-              finalBusinessName = aiContent.businessName;
-              finalDescription = aiContent.description;
-            }
+          const selectedCategory = categories.find((cat) => cat.id === Number(methods.getValues('category_id')))
+          console.log(selectedCategory, 'selectedCategory')
+          const aiContent = await fetch('/api/generate-business-content', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              businessName: data.businessName,
+              sellingPrice: data.sellingPrice,
+              profitMargin: data.profitMargin,
+              category: selectedCategory?.name
+            })  
+          }).then(res => res.json());
+
+          if (aiContent && !aiContent.error) {
+            finalBusinessName = aiContent.businessName;
+            finalDescription = aiContent.description;
           }
+
 
           const calculateMinMaxProfitMargins = (revenuePerYear: Record<string, number>, cost: Record<string, number>) => {
             const profitMargins = Object.keys(revenuePerYear).map(year => {
@@ -212,7 +212,8 @@ export default function BusinessListingWizard({
             selling_price: data.sellingPrice,
             revenue: data.revenuePerYear,
             cost: data.cost,
-            form_status: 'pending',
+            form_status: 'published',
+            approve_status: 'pending',
             acquisition_type: data.acquisition_type,
             investment_percentage: data.acquisition_type === 'Invest' ? data.investmentPercentage : null,
             images: data.images || [],
@@ -238,8 +239,8 @@ export default function BusinessListingWizard({
           sessionStorage.removeItem('step')
           setStep(1)
 
-          const message = wantsPremium 
-            ? isPaid 
+          const message = wantsPremium
+            ? isPaid
               ? "Your premium business listing has been submitted successfully."
               : "Your business listing has been submitted as a free listing. You can upgrade to premium later."
             : "Your free business listing has been submitted successfully."
@@ -248,14 +249,14 @@ export default function BusinessListingWizard({
             title: "Success!",
             description: message,
           })
-          
+
           router.push('/dashboard')
           setStep(1)
         } catch (error: unknown) {
           console.error('Error submitting form:', error)
           if ((error as any).code === '23505') {
             toast({
-              title: "Error", 
+              title: "Error",
               description: "You have already submitted a business listing with this session ID. Please try again with a different session ID.",
               variant: "destructive"
             })
@@ -284,7 +285,7 @@ export default function BusinessListingWizard({
       case 1:
         return ['listingType']
       case 2:
-        return ['businessName', 'description',  'acquisition_type', 'investmentPercentage', 'area_id', 'category_id']
+        return ['businessName', 'description', 'acquisition_type', 'investmentPercentage', 'area_id', 'category_id']
       case 3:
         return ['monthlyRevenue', 'profitMargin', 'sellingPrice', 'revenuePerYear', 'cost']
       case 4:
@@ -309,7 +310,7 @@ export default function BusinessListingWizard({
       case 1:
         return <Step1 icon={DollarSign} />
       case 2:
-        return <Step2 icon={Building} categories={categories}  areas={areas} />
+        return <Step2 icon={Building} categories={categories} areas={areas} />
       case 3:
         return <Step3 icon={FileText} />
       case 4:
@@ -330,13 +331,11 @@ export default function BusinessListingWizard({
             {[1, 2, 3, 4, 5].map((stepNumber) => (
               <div
                 key={stepNumber}
-                className={`flex items-center ${
-                  step >= stepNumber ? 'text-white' : 'text-blue-300'
-                }`}
+                className={`flex items-center ${step >= stepNumber ? 'text-white' : 'text-blue-300'
+                  }`}
               >
-                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                  step >= stepNumber ? 'bg-white text-blue-600' : 'border-blue-300'
-                }`}>
+                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step >= stepNumber ? 'bg-white text-blue-600' : 'border-blue-300'
+                  }`}>
                   {stepNumber}
                 </div>
                 {stepNumber < 5 && (
@@ -368,10 +367,10 @@ export default function BusinessListingWizard({
             onClick={handleNext}
             className="flex items-center ml-auto text-white bg-blue-600 hover:bg-blue-700"
           >
-            {step === 5 ?  methods.getValues('listingType') === 'free' ? 'Submit your free listing' : 'Submit' : 'Next'}
+            {step === 5 ? methods.getValues('listingType') === 'free' ? 'Submit your free listing' : 'Submit' : 'Next'}
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
-        </CardFooter> 
+        </CardFooter>
       </Card>
     </FormProvider>
   )

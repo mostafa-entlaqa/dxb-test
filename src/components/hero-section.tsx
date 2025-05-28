@@ -173,7 +173,8 @@ export default function HeroSection() {
             <div className="flex justify-center pt-4">
               <Button 
                 type="submit"
-                size="lg" 
+                size="lg"
+                variant="default"
                 className="w-full md:w-auto min-w-[200px]"
                 disabled={isLoading}
               >

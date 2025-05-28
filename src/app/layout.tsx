@@ -9,7 +9,7 @@ import Footer from '@/components/footer'
 import { LanguageProvider } from '@/contexts/language-context'
 import { WeglotScript } from '@/components/weglot-script'
 
-const oswald = Oswald({ 
+const oswald = Oswald({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-oswald',
@@ -30,9 +30,9 @@ export default function RootLayout({
       <body className={`${oswald.variable} font-sans flex flex-col min-h-screen`}>
         <WeglotScript />
         <LanguageProvider>
-          <ThemeProvider 
-            attribute="class" 
-            defaultTheme="system" 
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
             enableSystem
           >
             <div className="flex flex-col min-h-screen" data-wg-translatable>
@@ -43,7 +43,7 @@ export default function RootLayout({
               <Footer />
             </div>
             <ShadcnToaster />
-            <Toaster richColors position="top-right" />
+            <Toaster richColors position="bottom-right" />
           </ThemeProvider>
         </LanguageProvider>
       </body>
