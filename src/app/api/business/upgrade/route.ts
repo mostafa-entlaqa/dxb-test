@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         // }
 
         // Get the base URL from the request if environment variable is not set
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin') || 'http://localhost:3000';
         // Create Stripe checkout session
         const checkoutSession = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
