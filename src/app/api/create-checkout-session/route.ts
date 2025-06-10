@@ -11,16 +11,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(request: Request) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
-    
+
     // Get user session
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
-    
+
     const { data } = await supabase.from('settings').select('value').eq('key', 'paid_post_price').single()
     console.log('data of Price', data)
-    
+
     // Convert the price from database (1499) to cents for Stripe (149900)
     const priceInCents = parseInt(data?.value || '1499') * 100
 
@@ -41,8 +41,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${request.headers.get('origin')}/list-business?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `${request.headers.get('origin')}/list-business?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin')}/list-business?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin')}/list-business?canceled=true`,
       metadata: {
         userId: session.user.id
       },

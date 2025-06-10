@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { price, credits } = body
 
-   
+
 
     // Create a new invoice record
     const { data: invoice, error: invoiceError } = await supabase
@@ -68,8 +68,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/buy?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/buy?payment=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin')}/buy?payment=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin')}/buy?payment=cancelled`,
       metadata: {
         invoice_id: invoice.id,
         user_id: session.user.id,
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
       },
     })
 
- 
+
     // Update invoice with Stripe session ID
     const { error: updateError } = await supabase
       .from('invoices')
