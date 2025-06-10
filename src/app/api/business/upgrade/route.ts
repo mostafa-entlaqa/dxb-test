@@ -20,10 +20,10 @@ export async function POST(request: Request) {
         }
 
         const { data: paidPostPrice, error: paidPostPriceError } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'paid_post_price')
-        .single()
+            .from('settings')
+            .select('value')
+            .eq('key', 'paid_post_price')
+            .single()
 
         console.log('paidPostPrice', paidPostPrice?.value)
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
             console.error('Paid post price fetch error:', paidPostPriceError)
             return NextResponse.json({ error: 'Failed to fetch paid post price' }, { status: 500 })
         }
-        
+
 
 
         // Get business details
@@ -42,18 +42,18 @@ export async function POST(request: Request) {
             .eq('user_id', user.id)
             .single()
 
-        
+
 
         if (businessError || !business) {
             console.error('Business fetch error:', businessError)
             return NextResponse.json(
-                { error: 'Business not found or unauthorized' }, 
+                { error: 'Business not found or unauthorized' },
                 { status: 404 }
             )
         }
 
 
-        
+
 
         // Check if there's already a paid invoice
         // const { data: existingInvoice, error: invoiceError } = await supabase
@@ -71,9 +71,7 @@ export async function POST(request: Request) {
         // }
 
         // Get the base URL from the request if environment variable is not set
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                       `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}`
-
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
         // Create Stripe checkout session
         const checkoutSession = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -156,7 +154,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('Checkout session error:', error)
         return NextResponse.json(
-            { error: error.message || 'Failed to create checkout session' }, 
+            { error: error.message || 'Failed to create checkout session' },
             { status: 500 }
         )
     }
