@@ -30,6 +30,7 @@ import { User, UserCircle, ShieldCheck, Check, EyeIcon, EyeOffIcon } from 'lucid
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
 import { initCredits } from '@/actions/init-credits'
+import { EmailConfirmation } from '@/app/signup/email-confirmation'
 
 type PasswordStrengthLevel = {
   label: string;
@@ -70,6 +71,8 @@ interface AccountFormData {
 
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient()
@@ -127,20 +130,31 @@ export default function SignUpPage() {
         }
       })
 
-      console.log('authData', authData)
+      if (authError) {
+        // Check if the error is due to existing user
+        if (authError.message.includes('User already registered')) {
+          // Try to resend confirmation email
+          const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email: data.email,
+          })
 
+          if (resendError) throw resendError
 
-      await initCredits(authData?.user?.id)
-
-
-
-      if (authError) throw authError
-
+          // Show confirmation UI
+          setUserEmail(data.email)
+          setShowConfirmation(true)
+          toast({
+            title: 'Confirmation email resent',
+            description: 'Please check your email for the confirmation link',
+          })
+          return
+        }
+        throw authError
+      }
 
       if (authData.user) {
         // Create initial profile
-
-
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -151,19 +165,21 @@ export default function SignUpPage() {
           })
           .single()
 
-
-
-        if (profileError && profileError.code !== '23505') { // Ignore unique violation
+        if (profileError && profileError.code !== '23505') {
           throw profileError
         }
+
+        // Initialize credits for the user
+        await initCredits(authData.user.id)
+
+        toast({
+          title: 'Account created successfully',
+          description: 'Please check your email for the confirmation link',
+        })
+
+        setUserEmail(data.email)
+        setShowConfirmation(true)
       }
-
-      toast({
-        title: 'Account created successfully',
-        description: 'Please check your email for the confirmation link',
-      })
-
-      router.push('/login?status=confirmation-pending')
     } catch (error) {
       toast({
         title: 'Error',
@@ -173,6 +189,44 @@ export default function SignUpPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleResendEmail = async () => {
+    if (!userEmail) return
+
+    setIsLoading(true)
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+      })
+
+      if (error) throw error
+
+      toast({
+        title: 'Confirmation email resent',
+        description: 'Please check your email again',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to resend confirmation email',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (showConfirmation) {
+    return (
+      <div className="container max-w-2xl mx-auto px-4 py-16">
+        <EmailConfirmation 
+          email={userEmail} 
+          onResendEmail={handleResendEmail}
+        />
+      </div>
+    )
   }
 
   return (

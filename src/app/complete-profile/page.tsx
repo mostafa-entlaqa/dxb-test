@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -27,6 +26,9 @@ import {
 import { useToast } from '@/components/ui/use-toast'
 import { Icons } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/phone-input'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getClientSupabase } from '@/lib/supabase/client'
+import { initCredits } from '@/actions/init-credits'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -58,7 +60,7 @@ export default function CompleteProfilePage() {
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient()
+  const supabase = getClientSupabase()
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -81,14 +83,9 @@ export default function CompleteProfilePage() {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('*')
+        .select('*, profiles(*)')
         .eq('id', session.user.id)
         .single()
-
-      if (profile?.profile_completed) {
-        router.push('/dashboard')
-        return
-      }
 
       setUser(session.user)
       setIsLoading(false)
@@ -145,6 +142,9 @@ export default function CompleteProfilePage() {
         .eq('id', user.id)
 
       if (updateError) throw updateError
+
+      // Ensure credits are initialized after profile completion
+      await initCredits(user.id)
 
       toast({
         title: 'Profile completed successfully',

@@ -42,6 +42,8 @@ export async function middleware(req: NextRequest) {
         .eq('id', session.user.id)
         .single()
 
+      console.log(profile, 'profile')
+
       if (!profile?.profile_completed) {
         return NextResponse.redirect(new URL('/complete-profile', req.url))
       }

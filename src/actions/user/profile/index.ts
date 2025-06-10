@@ -69,19 +69,17 @@ export async function getUserCredits(userId: string): Promise<UserCredits | null
 
     const { data, error } = await supabase
       .from("users_credits")
-      .select(`
-        id, user_id, ai_credits, created_at, updated_at, 
-        credits, last_credits_added_at, joined_at
-      `)
+      .select(`*`)
       .eq("user_id", userId)
-      .single()
+      .limit(1) // Use limit(1) to get at most one row
 
     if (error) {
       console.error("Error fetching user credits:", error)
       return null
     }
 
-    return data
+    // If data is an array (from limit(1)), take the first element, otherwise return null
+    return data && data.length > 0 ? data[0] : null
   } catch (error) {
     console.error("Error fetching user credits:", error)
     return null

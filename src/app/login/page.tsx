@@ -78,6 +78,10 @@ function LoginFormContent() {
           case "Too many requests":
             setError("Too many attempts. Please wait a few minutes before trying again.")
             break
+          case "Email not confirmed":
+            setError("Your email address is not confirmed. Please check your inbox for the confirmation link.")
+            // router.push(`/auth/confirmation?email=${encodeURIComponent(email)}`)
+            break
           default:
             setError("An error occurred during login. Please try again.")
         }
@@ -85,7 +89,7 @@ function LoginFormContent() {
       }
 
       router.refresh()
-      router.push(next || '/dashboard')
+      router.push(next || '/')
 
     } catch (error) {
       setError("An unexpected error occurred. Please try again.")
