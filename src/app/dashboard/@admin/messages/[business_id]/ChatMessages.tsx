@@ -3,6 +3,29 @@ import Image from "next/image"
 import { MessageCircle } from "lucide-react"
 import { useRef, useEffect } from "react"
 
+function AvatarFallback({ name }: { name: string }) {
+  const initial = name ? name.charAt(0).toUpperCase() : '?'
+  // Generate a consistent color based on the name
+  const colors = [
+    'bg-gradient-to-br from-blue-500 to-blue-600',
+    'bg-gradient-to-br from-purple-500 to-purple-600',
+    'bg-gradient-to-br from-pink-500 to-pink-600',
+    'bg-gradient-to-br from-green-500 to-green-600',
+    'bg-gradient-to-br from-yellow-500 to-yellow-600',
+    'bg-gradient-to-br from-red-500 to-red-600',
+    'bg-gradient-to-br from-indigo-500 to-indigo-600',
+    'bg-gradient-to-br from-teal-500 to-teal-600',
+  ]
+  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+  const gradientClass = colors[colorIndex]
+
+  return (
+    <div className={`w-8 h-8 rounded-full ${gradientClass} flex items-center justify-center ring-2 ring-background shadow-sm`}>
+      <span className="text-sm font-semibold text-white">{initial}</span>
+    </div>
+  )
+}
+
 export default function ChatMessages({ messages, seller, buyer, scrollContainerRef }: any) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -49,20 +72,23 @@ export default function ChatMessages({ messages, seller, buyer, scrollContainerR
             <div key={msg.id} className={`flex ${isSeller ? "justify-start" : "justify-end"} group`}>
               <div className={`flex items-end gap-2 max-w-[80%] ${isSeller ? "flex-row" : "flex-row-reverse"}`}>
                 <div className="relative">
-                  <Image
-                    src={user?.profile_pic_url || "/default-avatar.png"}
-                    alt={user?.full_name || ""}
-                    width={32}
-                    height={32}
-                    className="rounded-full object-cover border-2 border-background"
-                  />
+                  {user?.profile_pic_url ? (
+                    <Image
+                      src={user.profile_pic_url}
+                      alt={user?.full_name || ""}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover border-2 border-background"
+                    />
+                  ) : (
+                    <AvatarFallback name={user?.full_name || ""} />
+                  )}
                 </div>
                 <div
-                  className={`p-3 rounded-2xl shadow-sm ${
-                    isSeller
-                      ? "bg-muted border border-border rounded-tl-sm"
-                      : "bg-primary text-primary-foreground rounded-tr-sm"
-                  } w-full`}
+                  className={`p-3 rounded-2xl shadow-sm ${isSeller
+                    ? "bg-muted border border-border rounded-tl-sm"
+                    : "bg-primary text-primary-foreground rounded-tr-sm"
+                    } w-full`}
                 >
                   <div className="text-xs font-medium mb-1">
                     {isSeller ? seller?.full_name : buyer?.full_name}

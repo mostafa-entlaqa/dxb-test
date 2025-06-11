@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
-  // Get session only for protected routes or auth routes
+  // Get user only for protected routes or auth routes
   const protectedRoutes = ['/dashboard', '/settings', '/buy', '/sell', '/business', '/profile', '/my-listings']
   const authRoutes = ['/login', '/signup', '/forgot-password']
 
@@ -17,32 +17,46 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(route)
   )
 
-  // Only check session if needed
+  // Check for complete-profile page first
+  if (req.nextUrl.pathname === '/complete-profile') {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('profile_completed')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.profile_completed) {
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+    }
+  }
+
+  // Only check user if needed
   if (isProtectedRoute || isAuthRoute) {
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+    } = await supabase.auth.getUser()
 
     // Redirect to dashboard if logged in user tries to access auth routes
-    if (session && isAuthRoute) {
+    if (user && isAuthRoute) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
-    // Redirect to login if accessing protected route without session
-    if (isProtectedRoute && !session) {
+    // Redirect to login if accessing protected route without user
+    if (isProtectedRoute && !user) {
       const returnUrl = req.nextUrl.pathname + req.nextUrl.search
       return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(returnUrl)}`, req.url))
     }
 
     // Only check profile completion for protected routes
-    if (session && isProtectedRoute && !req.nextUrl.pathname.startsWith('/complete-profile')) {
+    if (user && isProtectedRoute && !req.nextUrl.pathname.startsWith('/complete-profile')) {
       const { data: profile } = await supabase
         .from('users')
         .select('profile_completed')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
-
-      console.log(profile, 'profile')
 
       if (!profile?.profile_completed) {
         return NextResponse.redirect(new URL('/complete-profile', req.url))
