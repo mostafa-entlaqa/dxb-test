@@ -1,20 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { MoreHorizontal, Check } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { toast } from "@/hooks/use-toast"
 
 type BuyerStatus = "New" | "Qualified" | "Negotiation" | "Won" | "Lost"
@@ -36,12 +28,37 @@ function Buyer({ status }: BuyerProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const supabase = createClientComponentClient()
 
-  const statusColors = {
-    New: "bg-blue-500",
-    Qualified: "bg-green-500",
-    Negotiation: "bg-yellow-500",
-    Won: "bg-purple-500",
-    Lost: "bg-red-500",
+  const statusConfig = {
+    New: {
+      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+      hoverColor: "hover:bg-blue-200 dark:hover:bg-blue-800/50",
+      activeColor: "bg-blue-700 text-white dark:bg-blue-600",
+      icon: "🔵",
+    },
+    Qualified: {
+      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+      hoverColor: "hover:bg-emerald-200 dark:hover:bg-emerald-800/50",
+      activeColor: "bg-emerald-700 text-white dark:bg-emerald-600",
+      icon: "✅",
+    },
+    Negotiation: {
+      color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+      hoverColor: "hover:bg-amber-200 dark:hover:bg-amber-800/50",
+      activeColor: "bg-amber-700 text-white dark:bg-amber-600",
+      icon: "🤝",
+    },
+    Won: {
+      color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
+      hoverColor: "hover:bg-violet-200 dark:hover:bg-violet-800/50",
+      activeColor: "bg-violet-700 text-white dark:bg-violet-600",
+      icon: "🏆",
+    },
+    Lost: {
+      color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
+      hoverColor: "hover:bg-rose-200 dark:hover:bg-rose-800/50",
+      activeColor: "bg-rose-700 text-white dark:bg-rose-600",
+      icon: "❌",
+    },
   }
 
   const updateStatus = async (newStatus: BuyerStatus) => {
@@ -54,12 +71,12 @@ function Buyer({ status }: BuyerProps) {
 
       if (error) throw error
 
-        setCurrentStatus(newStatus)
-        toast({
-            title: `Status updated to ${newStatus}`,
-            description: 'Buyer status updated successfully',
-            variant: 'default',
-        })
+      setCurrentStatus(newStatus)
+      toast({
+        title: `Status updated to ${newStatus}`,
+        description: "Buyer status updated successfully",
+        variant: "default",
+      })
     } catch (error) {
       console.error("Error updating status:", error)
       toast({
@@ -72,58 +89,69 @@ function Buyer({ status }: BuyerProps) {
     }
   }
 
+  // Extract initials from name or email
+  const getInitials = () => {
+    if (status.buyer.full_name) {
+      return status.buyer.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2)
+    }
+    return status.buyer.email[0].toUpperCase()
+  }
+
   return (
-    <>
-    <div className="flex  w-full items-center p-3 rounded-lg hover:bg-muted/50 transition-colors">
-      <Avatar className="w-10 h-10 mr-3 border overflow-hidden">
+    <div className="flex items-center w-full">
+      <Avatar className="h-10 w-10 border shadow-sm flex-shrink-0">
         {status.buyer.profile_pic_url ? (
-          <AvatarImage src={status.buyer.profile_pic_url} alt={status.buyer.full_name || status.buyer.email} />
+          <AvatarImage
+            src={status.buyer.profile_pic_url || "/placeholder.svg"}
+            alt={status.buyer.full_name || status.buyer.email}
+            className="object-cover"
+          />
         ) : (
-          <AvatarFallback className="bg-primary/10 text-primary">
-            {(status.buyer.full_name?.[0] || status.buyer.email[0]).toUpperCase()}
-          </AvatarFallback>
+          <AvatarFallback className="bg-primary/10 text-primary font-medium">{getInitials()}</AvatarFallback>
         )}
       </Avatar>
 
-      <div className="flex-1 space-y-1">
-        <div className="font-medium">{status.buyer.full_name || status.buyer.email}</div>
-        <Badge className={`${statusColors[currentStatus]} text-white font-medium px-2.5 py-0.5`}>{currentStatus}</Badge>
-      </div>
+      <div className="ml-3 flex-1 min-w-0">
+        <div className="font-medium text-sm truncate">{status.buyer.full_name || status.buyer.email}</div>
 
-    
-    </div>
-
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:bg-secondary h-8 w-8 p-0 rounded-full"
-            disabled={isUpdating}
-          >
-            <MoreHorizontal className="h-4 w-4 mb-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent  className="w-48" align="end">
-          <DropdownMenuLabel className="text-center font-medium">Change Status</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-
-          {(Object.keys(statusColors) as BuyerStatus[]).map((statusOption) => (
-            <DropdownMenuItem
-              key={statusOption}
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => updateStatus(statusOption)}
-              disabled={isUpdating}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild disabled={isUpdating}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`px-2 py-0.5 h-auto mt-1 ${statusConfig[currentStatus].color} ${statusConfig[currentStatus].hoverColor} border-0 shadow-none font-normal text-xs`}
             >
-              <Badge className={`${statusColors[statusOption]} text-white hover:text-black`}>{statusOption}</Badge>
-              {currentStatus === statusOption && <Check className="h-4 w-4 text-primary " />}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+              <span className="mr-1">{statusConfig[currentStatus].icon}</span>
+              {currentStatus}
+              <ChevronDown className="ml-1 h-3 w-3 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-40 p-1">
+            {(Object.keys(statusConfig) as BuyerStatus[]).map((statusOption) => (
+              <DropdownMenuItem
+                key={statusOption}
+                className={`flex items-center px-2 py-1.5 my-0.5 rounded-md cursor-pointer text-sm ${
+                  currentStatus === statusOption
+                    ? statusConfig[statusOption].activeColor
+                    : `${statusConfig[statusOption].color} ${statusConfig[statusOption].hoverColor}`
+                }`}
+                onClick={() => updateStatus(statusOption)}
+                disabled={isUpdating || currentStatus === statusOption}
+              >
+                <span className="mr-2">{statusConfig[statusOption].icon}</span>
+                {statusOption}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   )
 }
 
 export default Buyer
-

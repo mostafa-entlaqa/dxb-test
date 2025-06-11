@@ -8,6 +8,7 @@ import { Header } from '@/components/header'
 import Footer from '@/components/footer'
 import { LanguageProvider } from '@/contexts/language-context'
 import { WeglotScript } from '@/components/weglot-script'
+import NextTopLoader from 'nextjs-toploader'
 
 const oswald = Oswald({
   subsets: ['latin'],
@@ -28,6 +29,16 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning>
       <body className={`${oswald.variable} font-sans flex flex-col min-h-screen`}>
+        <NextTopLoader 
+          color="#2563eb"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+        />
         <WeglotScript />
         <LanguageProvider>
           <ThemeProvider
