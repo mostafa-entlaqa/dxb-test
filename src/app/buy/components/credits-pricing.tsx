@@ -36,7 +36,7 @@ export function CreditsPricing() {
   const handlePurchase = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (!session) {
         router.push('/login')
         toast({
@@ -124,14 +124,14 @@ export function CreditsPricing() {
                 one-time
               </span>
             </div>
-            <Button 
+            <Button
               onClick={handlePurchase}
               className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 text-lg rounded-lg transition-all duration-150 ease-in-out transform hover:scale-[1.02]"
             >
               Purchase Credits
             </Button>
           </div>
-          
+
           <div className="grid gap-4">
             {features.map((feature, index) => (
               <div key={index} className="flex items-start">

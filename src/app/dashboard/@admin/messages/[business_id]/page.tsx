@@ -5,9 +5,35 @@ import { MessageCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Suspense } from "react"
-import ChatMessages from "./ChatMessages"
+import ChatArea from "./ChatArea"
+
+// Add AvatarFallback component
+function AvatarFallback({ name, size = 48 }: { name: string; size?: number }) {
+  const initial = name ? name.charAt(0).toUpperCase() : '?'
+  const colors = [
+    'bg-gradient-to-br from-blue-500 to-blue-600',
+    'bg-gradient-to-br from-purple-500 to-purple-600',
+    'bg-gradient-to-br from-pink-500 to-pink-600',
+    'bg-gradient-to-br from-green-500 to-green-600',
+    'bg-gradient-to-br from-yellow-500 to-yellow-600',
+    'bg-gradient-to-br from-red-500 to-red-600',
+    'bg-gradient-to-br from-indigo-500 to-indigo-600',
+    'bg-gradient-to-br from-teal-500 to-teal-600',
+  ]
+  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+  const gradientClass = colors[colorIndex]
+
+  return (
+    <div
+      className={`rounded-full ${gradientClass} flex items-center justify-center ring-2 ring-background shadow-sm`}
+      style={{ width: size, height: size }}
+    >
+      <span className="text-sm font-semibold text-white" style={{ fontSize: `${size * 0.4}px` }}>
+        {initial}
+      </span>
+    </div>
+  )
+}
 
 async function getUserInfo(user_id: string) {
   const supabase = getServerSupabase()
@@ -75,6 +101,9 @@ export default async function AdminMessageRoomPage({
     .in("receiver_id", [sender_id, receiver_id])
     .order("created_at", { ascending: true })
 
+  // Ensure messages is always an array
+  const messagesArray = messages || []
+
   function formatMessageTime(timestamp: string) {
     const date = new Date(timestamp)
     if (new Date().toDateString() === date.toDateString()) {
@@ -104,13 +133,17 @@ export default async function AdminMessageRoomPage({
           <div className="space-y-4">
             {/* Seller info */}
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background">
-              <Image
-                src={seller?.profile_pic_url || "/default-avatar.png"}
-                alt={seller?.full_name || "Seller"}
-                width={48}
-                height={48}
-                className="rounded-full object-cover"
-              />
+              {seller?.profile_pic_url ? (
+                <Image
+                  src={seller.profile_pic_url}
+                  alt={seller?.full_name || "Seller"}
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover"
+                />
+              ) : (
+                <AvatarFallback name={seller?.full_name || "Unknown Seller"} size={48} />
+              )}
               <div>
                 <div className="font-medium">{seller?.full_name || "Unknown Seller"}</div>
                 <Badge variant="outline" className="mt-1">
@@ -122,13 +155,17 @@ export default async function AdminMessageRoomPage({
 
             {/* Buyer info */}
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background">
-              <Image
-                src={buyer?.profile_pic_url || "/default-avatar.png"}
-                alt={buyer?.full_name || "Buyer"}
-                width={48}
-                height={48}
-                className="rounded-full object-cover"
-              />
+              {buyer?.profile_pic_url ? (
+                <Image
+                  src={buyer.profile_pic_url}
+                  alt={buyer?.full_name || "Buyer"}
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover"
+                />
+              ) : (
+                <AvatarFallback name={buyer?.full_name || "Unknown Buyer"} size={48} />
+              )}
               <div>
                 <div className="font-medium">{buyer?.full_name || "Unknown Buyer"}</div>
                 <Badge variant="outline" className="mt-1">
@@ -160,20 +197,32 @@ export default async function AdminMessageRoomPage({
 
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
-              <Image
-                src={seller?.profile_pic_url || "/default-avatar.png"}
-                alt={seller?.full_name || "Seller"}
-                width={32}
-                height={32}
-                className="rounded-full border-2 border-background"
-              />
-              <Image
-                src={buyer?.profile_pic_url || "/default-avatar.png"}
-                alt={buyer?.full_name || "Buyer"}
-                width={32}
-                height={32}
-                className="rounded-full border-2 border-background"
-              />
+              {seller?.profile_pic_url ? (
+                <Image
+                  src={seller.profile_pic_url}
+                  alt={seller?.full_name || "Seller"}
+                  width={32}
+                  height={32}
+                  className="rounded-full border-2 border-background"
+                />
+              ) : (
+                <div className="relative z-10">
+                  <AvatarFallback name={seller?.full_name || "Unknown Seller"} size={32} />
+                </div>
+              )}
+              {buyer?.profile_pic_url ? (
+                <Image
+                  src={buyer.profile_pic_url}
+                  alt={buyer?.full_name || "Buyer"}
+                  width={32}
+                  height={32}
+                  className="rounded-full border-2 border-background"
+                />
+              ) : (
+                <div className="relative z-0">
+                  <AvatarFallback name={buyer?.full_name || "Unknown Buyer"} size={32} />
+                </div>
+              )}
             </div>
             <Separator orientation="vertical" className="h-6" />
             <div className="text-sm font-medium">{business?.opportunity_name}</div>
@@ -181,9 +230,7 @@ export default async function AdminMessageRoomPage({
         </div>
 
         {/* Messages area */}
-        <ScrollArea className="flex-1 p-4">
-          <ChatMessages messages={messages} seller={seller} buyer={buyer} />
-        </ScrollArea>
+        <ChatArea messages={messagesArray} seller={seller} buyer={buyer} />
 
         {/* Message input area - disabled in admin view */}
         <div className="p-4 border-t border-border">

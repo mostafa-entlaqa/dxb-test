@@ -5,8 +5,7 @@ import { Building2, ArrowDownWideNarrow, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInsights } from '@/actions/user/buy/get-insights'
 import { getFilterOptions } from '@/actions/user/buy/get-filter-options'
-import { CreditsPricing } from './components/credits-pricing'
-
+import { SubscriptionPricing } from './components/subscription-pricing'
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
@@ -43,14 +42,14 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
       value: (!insights.price_range_min && !insights.price_range_max)
         ? "No listings"
         : `${new Intl.NumberFormat('en-AE', {
-            style: 'currency',
-            currency: 'AED',
-            maximumFractionDigits: 0
-          }).format(insights.price_range_min)} - ${new Intl.NumberFormat('en-AE', {
-            style: 'currency',
-            currency: 'AED',
-            maximumFractionDigits: 0
-          }).format(insights.price_range_max)}`,
+          style: 'currency',
+          currency: 'AED',
+          maximumFractionDigits: 0
+        }).format(insights.price_range_min)} - ${new Intl.NumberFormat('en-AE', {
+          style: 'currency',
+          currency: 'AED',
+          maximumFractionDigits: 0
+        }).format(insights.price_range_max)}`,
       color: "text-green-600 dark:text-green-400"
     },
     {
@@ -64,15 +63,15 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Buy a Business</h1>
-      
+
       {/* Credits Pricing Section */}
       <div className="mb-12">
-        <CreditsPricing />
+        <SubscriptionPricing   />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {insightCards.map((card, index) => (
-          <div 
+          <div
             key={index}
             className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700"
           >
@@ -85,8 +84,8 @@ export default async function BuyBusinessPage({ searchParams }: PageProps) {
         ))}
       </div>
       <div className="flex justify-between items-center mb-8">
-        <BusinessFilters 
-          initialFilters={filters} 
+        <BusinessFilters
+          initialFilters={filters}
           initialCategories={filterOptions.categories}
           initialAreas={filterOptions.areas}
         />

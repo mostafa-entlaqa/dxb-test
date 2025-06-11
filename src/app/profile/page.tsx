@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getUserProfile, getUserCredits } from "@/actions/user/profile"
 import ProfileForm from "./profile-form"
+import SubscriptionManager from "./components/subscription-manager"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CalendarDays, CreditCard, User } from "lucide-react"
@@ -74,8 +75,6 @@ export default async function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-              
-
                 <div className="flex items-center">
                   <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
                   <div className="space-y-0.5">
@@ -94,6 +93,8 @@ export default async function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+
+          <SubscriptionManager />
 
           <Card>
             <CardHeader>
