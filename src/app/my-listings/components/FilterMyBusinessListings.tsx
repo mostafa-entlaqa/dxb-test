@@ -49,9 +49,9 @@ export function FilterMyBusinessListings({ table }: FilterMyBusinessListingsProp
                 placeholder="Search businesses..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="max-w-sm"
+                className="w-[300px]"
             />
-            <div className="flex gap-4">
+            <div className="flex ms-4 gap-4">
                 <Select value={statusFilter} onValueChange={handleStatusChange}>
                     <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Select status" />

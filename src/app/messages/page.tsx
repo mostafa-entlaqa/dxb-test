@@ -7,34 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Message, Business } from "./[id]/type"
 import { Separator } from "@/components/ui/separator"
 
-interface DatabaseMessage {
-  id: string
-  business_id: string
-  sender_id: string
-  receiver_id: string
-  content: string
-  created_at: string
-  attachments?: string[]
-  businesses: {
-    id: string
-    opportunity_name: string
-    selling_price: number
-    category_id: number
-    area_id: string
-    user_id: string
-    images: string[]
-  }
-  sender: {
-    id: string
-    full_name: string
-    profile_pic_url?: string
-  }
-  receiver: {
-    id: string
-    full_name: string
-    profile_pic_url?: string
-  }
-}
+
 
 interface Conversation {
   business: Business

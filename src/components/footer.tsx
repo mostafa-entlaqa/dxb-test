@@ -17,7 +17,7 @@ export default function Footer() {
   const pathname = usePathname()
 
   // Hide footer if the pathname starts with "/messages/"
-  if (pathname.startsWith('/messages/')) {
+  if (pathname.startsWith('/messages/') || pathname.startsWith('/dashboard')) {
     return null
   }
 

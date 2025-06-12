@@ -1,118 +1,241 @@
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, DollarSign, Activity, Building } from "lucide-react"
+import { Users, DollarSign, Building, UserCheck, CreditCard, Activity } from "lucide-react"
 import { getUsers } from "@/actions/admin/users"
-import { getBusinesses } from "@/actions/admin/businesses"
+import { getBusinessesList } from "@/actions/admin/get-business-lists"
 import { getInvoices } from "@/actions/admin/invoices"
+import { getSubscriptions } from "@/actions/admin/subscriptions"
+import { DashboardClient } from "./components/dashboard-client"
+import { subMonths, format } from "date-fns"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
-function formatCurrency(amount: number, currency: string = "AED") {
+function formatCurrency(amount: number, currency = "AED") {
   return new Intl.NumberFormat("en-AE", {
     style: "currency",
     currency,
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount);
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+function calculateGrowth(current: number, previous: number): { value: string; isPositive: boolean } {
+  if (previous === 0) return { value: "+100%", isPositive: true }
+  const growth = ((current - previous) / previous) * 100
+  const value = `${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%`
+  return { value, isPositive: growth >= 0 }
 }
 
 export default async function DashboardPage() {
+  // Get current date and previous month
+  const currentDate = new Date()
+  const previousMonth = subMonths(currentDate, 1)
+
   // Use server actions directly
-  const [users, businesses, invoices] = await Promise.all([
+  const [users, businesses, invoices, subscriptions] = await Promise.all([
     getUsers(),
-    getBusinesses(),
-    getInvoices()
-  ]);
+    getBusinessesList(),
+    getInvoices(),
+    getSubscriptions(),
+  ])
+
+  // Filter data for current and previous month
+  const currentMonthInvoices = invoices.filter(inv => 
+    new Date(inv.created_at).getMonth() === currentDate.getMonth() &&
+    new Date(inv.created_at).getFullYear() === currentDate.getFullYear()
+  )
+  
+  const previousMonthInvoices = invoices.filter(inv => 
+    new Date(inv.created_at).getMonth() === previousMonth.getMonth() &&
+    new Date(inv.created_at).getFullYear() === previousMonth.getFullYear()
+  )
+
+  const currentMonthBusinesses = businesses.data.filter(business => 
+    new Date(business.created_at).getMonth() === currentDate.getMonth() &&
+    new Date(business.created_at).getFullYear() === currentDate.getFullYear()
+  )
+
+  const previousMonthBusinesses = businesses.data.filter(business => 
+    new Date(business.created_at).getMonth() === previousMonth.getMonth() &&
+    new Date(business.created_at).getFullYear() === previousMonth.getFullYear()
+  )
 
   // Case-insensitive status checks
-  const paidInvoices = invoices.filter(inv => String(inv.status).toLowerCase().trim() === "paid");
-  const pendingInvoices = invoices.filter(inv => String(inv.status).toLowerCase().trim() === "pending");
-  const failedInvoices = invoices.filter(inv => String(inv.status).toLowerCase().trim() === "failed");
+  const paidInvoices = currentMonthInvoices.filter((inv) => String(inv.status).toLowerCase().trim() === "paid")
+  const pendingInvoices = currentMonthInvoices.filter((inv) => String(inv.status).toLowerCase().trim() === "pending")
+  const failedInvoices = currentMonthInvoices.filter((inv) => String(inv.status).toLowerCase().trim() === "failed")
 
-  // Make sure amount is a number
-  const totalRevenue = paidInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
-  const currency = paidInvoices[0]?.currency || "AED";
+  // Calculate user types correctly
+  const businessOwnerIds = new Set(businesses.data.map((business) => business.user_id))
+  const sellers = users.filter((user) => businessOwnerIds.has(user.id))
+  const buyers = users.filter(
+    (user) => user.interest === "buyer" || (!businessOwnerIds.has(user.id) && user.interest !== "seller"),
+  )
+
+  // Calculate subscription users
+  const activeSubscriptions = subscriptions.filter((sub) => 
+    sub.status === "active" && 
+    new Date(sub.current_period_end) > new Date()
+  )
+  const expiredSubscriptions = subscriptions.filter((sub) => 
+    new Date(sub.current_period_end) <= new Date()
+  )
+  const cancelledSubscriptions = subscriptions.filter((sub) => 
+    sub.status === "canceled" || sub.cancel_at_period_end
+  )
+  const subscribedUserIds = new Set(activeSubscriptions.map((sub) => sub.user_id))
+  const subscribedUsers = users.filter((user) => subscribedUserIds.has(user.id))
+
+  // Calculate revenue
+  const totalRevenue = paidInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+  const previousMonthRevenue = previousMonthInvoices
+    .filter(inv => String(inv.status).toLowerCase().trim() === "paid")
+    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+  const currency = paidInvoices[0]?.currency || "AED"
+
+  // Calculate real growth percentages
+  const userGrowth = calculateGrowth(users.length, users.length - (users.length - previousMonthInvoices.length))
+  const revenueGrowth = calculateGrowth(totalRevenue, previousMonthRevenue)
+  const transactionGrowth = calculateGrowth(paidInvoices.length, previousMonthInvoices.filter(inv => String(inv.status).toLowerCase().trim() === "paid").length)
+  const businessGrowth = calculateGrowth(currentMonthBusinesses.length, previousMonthBusinesses.length)
 
   return (
     <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Dashboard</h2>
       </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Users Overview Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Users Overview</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{users.length}</div>
-            <p className="text-xs text-muted-foreground">Active users in the system</p>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{businessOwnerIds.size}</span> Sellers
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{buyers.length}</span> Buyers
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{subscribedUsers.length}</span> Subscribers
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className={userGrowth.isPositive ? "text-green-600" : "text-red-600"}>
+                {userGrowth.value}
+              </span> from last month
+            </p>
           </CardContent>
         </Card>
+
+        {/* Revenue Overview Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Revenue Overview</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalRevenue, currency)}</div>
-            <p className="text-xs text-muted-foreground">From paid invoices</p>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{paidInvoices.length}</span> Paid Transactions
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{pendingInvoices.length}</span> Not Completed
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className={revenueGrowth.isPositive ? "text-green-600" : "text-red-600"}>
+                {revenueGrowth.value}
+              </span> from last month
+            </p>
           </CardContent>
         </Card>
+
+        {/* Business Overview Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Paid Transactions</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{paidInvoices.length}</div>
-            <p className="text-xs text-muted-foreground">Total paid transactions</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Business Applications</CardTitle>
+            <CardTitle className="text-sm font-medium">Business Overview</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{businesses.length}</div>
-            <p className="text-xs text-muted-foreground">Pending approval</p>
+            <div className="text-2xl font-bold">{businesses.data.length}</div>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{businesses.data.filter(b => b.featured).length}</span> Featured Listings
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{businesses.data.filter(b => !b.featured).length}</span> Free Listings
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{businessOwnerIds.size}</span> Active Sellers
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className={businessGrowth.isPositive ? "text-green-600" : "text-red-600"}>
+                {businessGrowth.value}
+              </span> from last month
+            </p>
           </CardContent>
         </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 mt-6">
+
+        {/* Subscription Overview Card */}
         <Card>
-          <CardHeader>
-            <CardTitle>Transaction Status</CardTitle>
-            <CardDescription>Overview of transaction statuses</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Subscription Overview</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span>Not Completed</span>
-                </div>
-                <span className="font-medium">{pendingInvoices.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span>Paid</span>
-                </div>
-                <span className="font-medium">{paidInvoices.length}</span>
-              </div>
-              {/* <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-red-500" />
-                  <span>Failed</span>
-                </div>
-                <span className="font-medium">{failedInvoices.length}</span>
-              </div> */}
+            <div className="text-2xl font-bold">{activeSubscriptions.length}</div>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{subscribedUsers.length}</span> Subscribed Users
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{cancelledSubscriptions.length}</span> Cancelled
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{expiredSubscriptions.length}</span> Expired
+              </p>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className={calculateGrowth(
+                activeSubscriptions.length, 
+                subscriptions.filter(sub => 
+                  sub.status === "active" && 
+                  new Date(sub.current_period_end) > previousMonth &&
+                  new Date(sub.created_at) < previousMonth
+                ).length
+              ).isPositive ? "text-green-600" : "text-red-600"}>
+                {calculateGrowth(
+                  activeSubscriptions.length, 
+                  subscriptions.filter(sub => 
+                    sub.status === "active" && 
+                    new Date(sub.current_period_end) > previousMonth &&
+                    new Date(sub.created_at) < previousMonth
+                  ).length
+                ).value}
+              </span> from last month
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Client-side component for charts with filtering */}
+      <DashboardClient
+        users={users}
+        businesses={businesses.data}
+        invoices={invoices}
+        subscriptions={subscriptions}
+        businessOwnerIds={businessOwnerIds}
+        paidInvoices={paidInvoices}
+        pendingInvoices={pendingInvoices}
+        failedInvoices={failedInvoices}
+      />
     </>
-  );
+  )
 }
